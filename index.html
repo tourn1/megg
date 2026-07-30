@@ -12,11 +12,9 @@
         body { padding-top: 20px; }
         .login-card { max-width: 400px; margin: 50px auto; }
         .table-actions { width: 120px; }
-        .pointer { cursor: pointer; }
         .hidden { display: none; }
         .pedido-detalle-item { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
         .total-pedido { font-size: 1.5rem; font-weight: bold; color: #198754; }
-        .nav-pills .nav-link.active { background-color: #0d6efd; }
     </style>
 </head>
 <body>
@@ -80,7 +78,6 @@
                     <button class="btn btn-success" id="btnNuevoCliente"><i class="fas fa-plus"></i> Nuevo</button>
                 </div>
                 <div id="clientesList"></div>
-                <!-- Formulario cliente (oculto) -->
                 <div id="clienteFormContainer" class="hidden mt-3 p-3 border rounded bg-light">
                     <h5 id="clienteFormTitle">Nuevo Cliente</h5>
                     <form id="clienteForm">
@@ -155,7 +152,6 @@
                     <button class="btn btn-success" id="btnNuevoPedido"><i class="fas fa-plus"></i> Nuevo</button>
                 </div>
                 <div id="pedidosList"></div>
-                <!-- Formulario pedido (oculto) -->
                 <div id="pedidoFormContainer" class="hidden mt-3 p-3 border rounded bg-light">
                     <h5 id="pedidoFormTitle">Nuevo Pedido</h5>
                     <form id="pedidoForm">
@@ -172,9 +168,7 @@
                         </div>
                         <hr>
                         <h6>Detalle del Pedido</h6>
-                        <div id="pedidoDetalleContainer">
-                            <!-- filas de detalle dinámicas -->
-                        </div>
+                        <div id="pedidoDetalleContainer"></div>
                         <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnAgregarDetalle"><i class="fas fa-plus"></i> Agregar Producto</button>
                         <div class="mt-3">
                             <strong>Total: </strong><span id="pedidoTotalDisplay" class="total-pedido">0.00</span>
@@ -190,78 +184,96 @@
     </div>
 </div>
 
-<!-- Bootstrap JS (para pestañas y modales) -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- SQL.js (SQLite en el navegador) -->
+<!-- SQL.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
 <script>
     (function() {
         'use strict';
 
-        // ===================== INICIALIZACIÓN DE SQLITE =====================
+        // ===================== VARIABLES GLOBALES =====================
         let db = null;
+        let currentUser = null;
 
+        // ===================== INICIALIZACIÓN DE LA BASE DE DATOS =====================
         function initDatabase() {
-            // Intentar cargar base de datos guardada en localStorage
-            const stored = localStorage.getItem('ventasDB');
-            let data = null;
-            if (stored) {
-                try {
-                    data = new Uint8Array(JSON.parse(stored));
-                } catch (e) {}
+            // Verificar que SQL.js esté cargado
+            if (typeof SQL === 'undefined') {
+                console.error('SQL.js no está cargado. Revisa la conexión a Internet.');
+                alert('Error: No se pudo cargar la librería SQL.js. Verifica tu conexión.');
+                return false;
             }
 
-            // Crear o cargar la base de datos
-            if (data) {
-                db = new SQL.Database(data);
-            } else {
-                db = new SQL.Database();
-                // Crear tablas
-                db.run(`
-                    CREATE TABLE usuarios (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        usuario TEXT UNIQUE,
-                        clave TEXT
-                    );
-                    CREATE TABLE clientes (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nombre TEXT,
-                        email TEXT,
-                        telefono TEXT,
-                        direccion TEXT
-                    );
-                    CREATE TABLE productos (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nombre TEXT,
-                        descripcion TEXT,
-                        precio REAL,
-                        stock INTEGER
-                    );
-                    CREATE TABLE pedidos (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        cliente_id INTEGER,
-                        fecha TEXT,
-                        total REAL,
-                        FOREIGN KEY(cliente_id) REFERENCES clientes(id)
-                    );
-                    CREATE TABLE pedido_detalles (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        pedido_id INTEGER,
-                        producto_id INTEGER,
-                        cantidad INTEGER,
-                        precio_unitario REAL,
-                        FOREIGN KEY(pedido_id) REFERENCES pedidos(id),
-                        FOREIGN KEY(producto_id) REFERENCES productos(id)
-                    );
-                `);
-                // Insertar usuario admin por defecto
-                db.run("INSERT INTO usuarios (usuario, clave) VALUES ('admin', 'admin')");
-                guardarDB();
+            try {
+                // Intentar cargar base de datos guardada en localStorage
+                const stored = localStorage.getItem('ventasDB');
+                let data = null;
+                if (stored) {
+                    try {
+                        data = new Uint8Array(JSON.parse(stored));
+                    } catch (e) {
+                        console.warn('Datos corruptos en localStorage, se creará nueva base de datos.');
+                    }
+                }
+
+                if (data) {
+                    db = new SQL.Database(data);
+                } else {
+                    db = new SQL.Database();
+                    // Crear tablas
+                    db.run(`
+                        CREATE TABLE usuarios (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            usuario TEXT UNIQUE,
+                            clave TEXT
+                        );
+                        CREATE TABLE clientes (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            nombre TEXT,
+                            email TEXT,
+                            telefono TEXT,
+                            direccion TEXT
+                        );
+                        CREATE TABLE productos (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            nombre TEXT,
+                            descripcion TEXT,
+                            precio REAL,
+                            stock INTEGER
+                        );
+                        CREATE TABLE pedidos (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            cliente_id INTEGER,
+                            fecha TEXT,
+                            total REAL,
+                            FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+                        );
+                        CREATE TABLE pedido_detalles (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            pedido_id INTEGER,
+                            producto_id INTEGER,
+                            cantidad INTEGER,
+                            precio_unitario REAL,
+                            FOREIGN KEY(pedido_id) REFERENCES pedidos(id),
+                            FOREIGN KEY(producto_id) REFERENCES productos(id)
+                        );
+                    `);
+                    // Insertar usuario admin por defecto
+                    db.run("INSERT INTO usuarios (usuario, clave) VALUES ('admin', 'admin')");
+                    guardarDB();
+                }
+                return true;
+            } catch (e) {
+                console.error('Error al inicializar la base de datos:', e);
+                alert('Error al inicializar la base de datos. Consola para más detalles.');
+                return false;
             }
         }
 
         function guardarDB() {
+            if (!db) return;
             const data = db.export();
             const arr = Array.from(data);
             localStorage.setItem('ventasDB', JSON.stringify(arr));
@@ -269,6 +281,7 @@
 
         // ===================== HELPERS =====================
         function query(sql, params = []) {
+            if (!db) throw new Error('Base de datos no inicializada.');
             const stmt = db.prepare(sql);
             const rows = [];
             while (stmt.step()) {
@@ -279,6 +292,7 @@
         }
 
         function run(sql, params = []) {
+            if (!db) throw new Error('Base de datos no inicializada.');
             db.run(sql, params);
             guardarDB();
         }
@@ -298,16 +312,19 @@
             return new Date().toISOString().split('T')[0];
         }
 
-        // ===================== ESTADO DE SESIÓN =====================
-        let currentUser = null;
-
+        // ===================== LOGIN / LOGOUT =====================
         function login(username, password) {
-            const rows = query("SELECT * FROM usuarios WHERE usuario = ? AND clave = ?", [username, password]);
-            if (rows.length > 0) {
-                currentUser = rows[0];
-                return true;
+            try {
+                const rows = query("SELECT * FROM usuarios WHERE usuario = ? AND clave = ?", [username, password]);
+                if (rows.length > 0) {
+                    currentUser = rows[0];
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.error('Error en login:', e);
+                return false;
             }
-            return false;
         }
 
         function logout() {
@@ -317,7 +334,6 @@
         }
 
         // ===================== RENDERIZAR LISTAS =====================
-
         // --- Clientes ---
         function renderClientes() {
             const rows = query("SELECT * FROM clientes ORDER BY nombre");
@@ -343,19 +359,17 @@
             html += '</tbody></table>';
             container.innerHTML = html;
 
-            // Eventos
             container.querySelectorAll('.btn-editar-cliente').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    editarCliente(id);
+                    editarCliente(this.dataset.id);
                 });
             });
             container.querySelectorAll('.btn-eliminar-cliente').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
                     if (confirm('¿Eliminar este cliente?')) {
-                        run("DELETE FROM clientes WHERE id = ?", [id]);
+                        run("DELETE FROM clientes WHERE id = ?", [this.dataset.id]);
                         renderClientes();
+                        cargarSelectClientes();
                     }
                 });
             });
@@ -413,15 +427,13 @@
 
             container.querySelectorAll('.btn-editar-producto').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    editarProducto(id);
+                    editarProducto(this.dataset.id);
                 });
             });
             container.querySelectorAll('.btn-eliminar-producto').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
                     if (confirm('¿Eliminar este producto?')) {
-                        run("DELETE FROM productos WHERE id = ?", [id]);
+                        run("DELETE FROM productos WHERE id = ?", [this.dataset.id]);
                         renderProductos();
                     }
                 });
@@ -485,14 +497,13 @@
 
             container.querySelectorAll('.btn-editar-pedido').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    editarPedido(id);
+                    editarPedido(this.dataset.id);
                 });
             });
             container.querySelectorAll('.btn-eliminar-pedido').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
                     if (confirm('¿Eliminar este pedido y sus detalles?')) {
+                        const id = this.dataset.id;
                         run("DELETE FROM pedido_detalles WHERE pedido_id = ?", [id]);
                         run("DELETE FROM pedidos WHERE id = ?", [id]);
                         renderPedidos();
@@ -501,7 +512,7 @@
             });
         }
 
-        // --- Formulario de Pedido (Dinámico) ---
+        // --- Formulario de Pedido ---
         function cargarSelectClientes() {
             const select = document.getElementById('pedidoCliente');
             const clientes = query("SELECT id, nombre FROM clientes ORDER BY nombre");
@@ -661,18 +672,14 @@
         });
 
         // Logout
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            logout();
-        });
+        document.getElementById('logoutBtn').addEventListener('click', logout);
 
-        // Clientes: nuevo
+        // Clientes
         document.getElementById('btnNuevoCliente').addEventListener('click', function() {
             resetClienteForm();
             document.getElementById('clienteFormContainer').classList.remove('hidden');
         });
-
         document.getElementById('clienteCancelBtn').addEventListener('click', resetClienteForm);
-
         document.getElementById('clienteForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const id = document.getElementById('clienteId').value;
@@ -690,18 +697,15 @@
             }
             resetClienteForm();
             renderClientes();
-            // Actualizar select de clientes en pedidos
             cargarSelectClientes();
         });
 
-        // Productos: nuevo
+        // Productos
         document.getElementById('btnNuevoProducto').addEventListener('click', function() {
             resetProductoForm();
             document.getElementById('productoFormContainer').classList.remove('hidden');
         });
-
         document.getElementById('productoCancelBtn').addEventListener('click', resetProductoForm);
-
         document.getElementById('productoForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const id = document.getElementById('productoId').value;
@@ -722,17 +726,15 @@
             renderProductos();
         });
 
-        // Pedidos: nuevo
+        // Pedidos
         document.getElementById('btnNuevoPedido').addEventListener('click', function() {
             resetPedidoForm();
             document.getElementById('pedidoFormContainer').classList.remove('hidden');
             cargarSelectClientes();
         });
-
         document.getElementById('pedidoCancelBtn').addEventListener('click', function() {
             document.getElementById('pedidoFormContainer').classList.add('hidden');
         });
-
         document.getElementById('btnAgregarDetalle').addEventListener('click', function() {
             agregarFilaDetalle();
         });
@@ -745,68 +747,54 @@
             if (!cliente_id) { alert('Seleccione un cliente'); return; }
             if (!fecha) { alert('Ingrese una fecha'); return; }
 
-            // Recalcular total
             const total = calcularTotalPedido();
+            let pedidoId = id;
 
-            // Guardar pedido
             if (id) {
+                // Actualizar pedido existente
                 run("UPDATE pedidos SET cliente_id = ?, fecha = ?, total = ? WHERE id = ?",
                     [cliente_id, fecha, total, id]);
-                // Eliminar detalles antiguos y volver a insertar
+                // Eliminar detalles antiguos
                 run("DELETE FROM pedido_detalles WHERE pedido_id = ?", [id]);
             } else {
+                // Insertar nuevo pedido
                 run("INSERT INTO pedidos (cliente_id, fecha, total) VALUES (?, ?, ?)",
                     [cliente_id, fecha, total]);
-                // Obtener el id del pedido recién insertado
                 const lastId = query("SELECT last_insert_rowid() as id");
-                const pedidoId = lastId[0].id;
-                // Insertar detalles
-                document.querySelectorAll('.pedido-detalle-item').forEach(row => {
-                    const producto_id = row.querySelector('.detalle-producto').value;
-                    const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
-                    const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
-                    if (producto_id && cantidad > 0) {
-                        run("INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
-                            [pedidoId, producto_id, cantidad, precio_unitario]);
-                    }
-                });
-                // Si es edición, ya actualizamos
-                if (id) {
-                    // Ya se actualizó el pedido y se borraron detalles; insertar nuevos
-                    document.querySelectorAll('.pedido-detalle-item').forEach(row => {
-                        const producto_id = row.querySelector('.detalle-producto').value;
-                        const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
-                        const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
-                        if (producto_id && cantidad > 0) {
-                            run("INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
-                                [id, producto_id, cantidad, precio_unitario]);
-                        }
-                    });
-                }
+                pedidoId = lastId[0].id;
             }
+
+            // Insertar los detalles (tanto para nuevo como para edición)
+            document.querySelectorAll('.pedido-detalle-item').forEach(row => {
+                const producto_id = row.querySelector('.detalle-producto').value;
+                const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
+                const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
+                if (producto_id && cantidad > 0) {
+                    run("INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
+                        [pedidoId, producto_id, cantidad, precio_unitario]);
+                }
+            });
 
             document.getElementById('pedidoFormContainer').classList.add('hidden');
             renderPedidos();
-            // Actualizar stocks? Podría hacerse, pero lo dejamos simple.
         });
 
-        // Cargar base de datos al inicio
-        initDatabase();
+        // ===================== INICIO =====================
+        // Esperar a que la página y todos los scripts estén cargados
+        window.onload = function() {
+            const success = initDatabase();
+            if (!success) {
+                alert('No se pudo inicializar la base de datos. La aplicación no funcionará correctamente.');
+                return;
+            }
+            // Mostrar login por defecto
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('mainSection').classList.add('hidden');
+            // Precargar select de clientes (aunque esté oculto)
+            cargarSelectClientes();
+            console.log('Sistema de Ventas iniciado. Usuario admin/admin');
+        };
 
-        // Si ya hay sesión (por si recarga), pero no mantenemos sesión persistente más allá de la página.
-        // Mostrar login siempre.
-        document.getElementById('loginSection').classList.remove('hidden');
-        document.getElementById('mainSection').classList.add('hidden');
-
-        // Ajustar para que al cargar la página, si hay usuario logueado (no implementado), pero no.
-        // También para edición de pedidos, necesitamos que el formulario de pedido esté listo.
-        // Pre-cargar select de clientes.
-        cargarSelectClientes();
-
-        // Inicializar con una fila de detalle si se abre el formulario.
-        // Pero solo se agrega cuando se hace clic en Nuevo.
-
-        console.log('Sistema de Ventas iniciado. Usuario admin/admin');
     })();
 </script>
 </body>

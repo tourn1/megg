@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Ventas</title>
-    <!-- Bootstrap 5 CSS -->
+    <!-- Bootstrap 5 CSS (CDN) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body { padding-top: 20px; }
+        body { padding-top: 20px; background: #f5f5f5; }
         .login-card { max-width: 400px; margin: 50px auto; }
         .table-actions { width: 120px; }
         .hidden { display: none; }
-        .pedido-detalle-item { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+        .pedido-detalle-item { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; border:1px solid #ddd; }
         .total-pedido { font-size: 1.5rem; font-weight: bold; color: #198754; }
+        .card-shadow { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .nav-pills .nav-link.active { background-color: #0d6efd; }
     </style>
 </head>
 <body>
@@ -22,7 +24,7 @@
 <div class="container" id="app">
     <!-- ============ LOGIN ============ -->
     <div id="loginSection">
-        <div class="card login-card shadow">
+        <div class="card login-card card-shadow">
             <div class="card-header bg-primary text-white text-center">
                 <h4><i class="fas fa-store"></i> Sistema de Ventas</h4>
             </div>
@@ -30,11 +32,11 @@
                 <form id="loginForm">
                     <div class="mb-3">
                         <label for="username" class="form-label">Usuario</label>
-                        <input type="text" class="form-control" id="username" value="admin" required>
+                        <input type="text" class="form-control" id="username" value="admin" required autocomplete="username">
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="password" value="admin" required>
+                        <input type="password" class="form-control" id="password" value="admin" required autocomplete="current-password">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
                     <div id="loginError" class="text-danger mt-2 text-center"></div>
@@ -56,20 +58,13 @@
             </div>
         </nav>
 
-        <!-- Menú de pestañas -->
+        <!-- Pestañas -->
         <ul class="nav nav-pills mb-3" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#clientesTab" type="button">Clientes</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#productosTab" type="button">Productos</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pedidosTab" type="button">Pedidos</button>
-            </li>
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#clientesTab" type="button">Clientes</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#productosTab" type="button">Productos</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pedidosTab" type="button">Pedidos</button></li>
         </ul>
 
-        <!-- Contenido de pestañas -->
         <div class="tab-content">
             <!-- CLIENTES -->
             <div class="tab-pane fade show active" id="clientesTab">
@@ -184,119 +179,119 @@
     </div>
 </div>
 
-<!-- Bootstrap JS -->
+<!-- Bootstrap JS (para pestañas y modales) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- SQL.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
+<!-- ==================== LÓGICA PRINCIPAL (sin SQL.js) ==================== -->
 <script>
     (function() {
         'use strict';
 
+        // ===================== CAPA DE DATOS CON localStorage =====================
+        // Simula tablas como arrays de objetos, con funciones query y run.
+        const DB = {
+            // Inicializa las tablas si no existen
+            init() {
+                if (!localStorage.getItem('ventas_usuarios')) {
+                    localStorage.setItem('ventas_usuarios', JSON.stringify([
+                        { id: 1, usuario: 'admin', clave: 'admin' }
+                    ]));
+                }
+                if (!localStorage.getItem('ventas_clientes')) {
+                    localStorage.setItem('ventas_clientes', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('ventas_productos')) {
+                    localStorage.setItem('ventas_productos', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('ventas_pedidos')) {
+                    localStorage.setItem('ventas_pedidos', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('ventas_pedido_detalles')) {
+                    localStorage.setItem('ventas_pedido_detalles', JSON.stringify([]));
+                }
+                // Generadores de ID
+                if (!localStorage.getItem('ventas_next_id')) {
+                    localStorage.setItem('ventas_next_id', JSON.stringify({ 
+                        usuarios: 2, clientes: 1, productos: 1, pedidos: 1, pedido_detalles: 1 
+                    }));
+                }
+            },
+
+            // Obtener el siguiente ID para una tabla
+            nextId(tabla) {
+                const ids = JSON.parse(localStorage.getItem('ventas_next_id'));
+                const id = ids[tabla] || 1;
+                ids[tabla] = id + 1;
+                localStorage.setItem('ventas_next_id', JSON.stringify(ids));
+                return id;
+            },
+
+            // Obtener todos los registros de una tabla
+            getAll(tabla) {
+                return JSON.parse(localStorage.getItem(`ventas_${tabla}`)) || [];
+            },
+
+            // Guardar todos los registros de una tabla
+            saveAll(tabla, data) {
+                localStorage.setItem(`ventas_${tabla}`, JSON.stringify(data));
+            },
+
+            // Insertar un registro
+            insert(tabla, registro) {
+                const data = this.getAll(tabla);
+                registro.id = this.nextId(tabla);
+                data.push(registro);
+                this.saveAll(tabla, data);
+                return registro;
+            },
+
+            // Actualizar un registro por id
+            update(tabla, id, nuevosDatos) {
+                const data = this.getAll(tabla);
+                const index = data.findIndex(r => r.id == id);
+                if (index !== -1) {
+                    data[index] = { ...data[index], ...nuevosDatos };
+                    this.saveAll(tabla, data);
+                    return true;
+                }
+                return false;
+            },
+
+            // Eliminar un registro por id
+            delete(tabla, id) {
+                const data = this.getAll(tabla);
+                const filtered = data.filter(r => r.id != id);
+                this.saveAll(tabla, filtered);
+            },
+
+            // Buscar por id
+            findById(tabla, id) {
+                const data = this.getAll(tabla);
+                return data.find(r => r.id == id) || null;
+            },
+
+            // Query simple: filtra por objeto de condiciones (solo igualdad)
+            query(tabla, condiciones = {}) {
+                const data = this.getAll(tabla);
+                return data.filter(r => {
+                    for (let key in condiciones) {
+                        if (r[key] != condiciones[key]) return false;
+                    }
+                    return true;
+                });
+            },
+
+            // Query con SQL-like (solo para casos muy específicos)
+            // Para simplificar, usamos funciones de array.
+        };
+
+        // Inicializar base de datos
+        DB.init();
+
         // ===================== VARIABLES GLOBALES =====================
-        let db = null;
         let currentUser = null;
 
-        // ===================== INICIALIZACIÓN DE LA BASE DE DATOS =====================
-        function initDatabase() {
-            // Verificar que SQL.js esté cargado
-            if (typeof SQL === 'undefined') {
-                console.error('SQL.js no está cargado. Revisa la conexión a Internet.');
-                alert('Error: No se pudo cargar la librería SQL.js. Verifica tu conexión.');
-                return false;
-            }
-
-            try {
-                // Intentar cargar base de datos guardada en localStorage
-                const stored = localStorage.getItem('ventasDB');
-                let data = null;
-                if (stored) {
-                    try {
-                        data = new Uint8Array(JSON.parse(stored));
-                    } catch (e) {
-                        console.warn('Datos corruptos en localStorage, se creará nueva base de datos.');
-                    }
-                }
-
-                if (data) {
-                    db = new SQL.Database(data);
-                } else {
-                    db = new SQL.Database();
-                    // Crear tablas
-                    db.run(`
-                        CREATE TABLE usuarios (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            usuario TEXT UNIQUE,
-                            clave TEXT
-                        );
-                        CREATE TABLE clientes (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            nombre TEXT,
-                            email TEXT,
-                            telefono TEXT,
-                            direccion TEXT
-                        );
-                        CREATE TABLE productos (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            nombre TEXT,
-                            descripcion TEXT,
-                            precio REAL,
-                            stock INTEGER
-                        );
-                        CREATE TABLE pedidos (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            cliente_id INTEGER,
-                            fecha TEXT,
-                            total REAL,
-                            FOREIGN KEY(cliente_id) REFERENCES clientes(id)
-                        );
-                        CREATE TABLE pedido_detalles (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            pedido_id INTEGER,
-                            producto_id INTEGER,
-                            cantidad INTEGER,
-                            precio_unitario REAL,
-                            FOREIGN KEY(pedido_id) REFERENCES pedidos(id),
-                            FOREIGN KEY(producto_id) REFERENCES productos(id)
-                        );
-                    `);
-                    // Insertar usuario admin por defecto
-                    db.run("INSERT INTO usuarios (usuario, clave) VALUES ('admin', 'admin')");
-                    guardarDB();
-                }
-                return true;
-            } catch (e) {
-                console.error('Error al inicializar la base de datos:', e);
-                alert('Error al inicializar la base de datos. Consola para más detalles.');
-                return false;
-            }
-        }
-
-        function guardarDB() {
-            if (!db) return;
-            const data = db.export();
-            const arr = Array.from(data);
-            localStorage.setItem('ventasDB', JSON.stringify(arr));
-        }
-
         // ===================== HELPERS =====================
-        function query(sql, params = []) {
-            if (!db) throw new Error('Base de datos no inicializada.');
-            const stmt = db.prepare(sql);
-            const rows = [];
-            while (stmt.step()) {
-                rows.push(stmt.getAsObject());
-            }
-            stmt.free();
-            return rows;
-        }
-
-        function run(sql, params = []) {
-            if (!db) throw new Error('Base de datos no inicializada.');
-            db.run(sql, params);
-            guardarDB();
-        }
-
         function escapeHtml(text) {
             if (!text) return '';
             return String(text).replace(/[&<>"]/g, function(m) {
@@ -314,17 +309,13 @@
 
         // ===================== LOGIN / LOGOUT =====================
         function login(username, password) {
-            try {
-                const rows = query("SELECT * FROM usuarios WHERE usuario = ? AND clave = ?", [username, password]);
-                if (rows.length > 0) {
-                    currentUser = rows[0];
-                    return true;
-                }
-                return false;
-            } catch (e) {
-                console.error('Error en login:', e);
-                return false;
+            const usuarios = DB.getAll('usuarios');
+            const user = usuarios.find(u => u.usuario === username && u.clave === password);
+            if (user) {
+                currentUser = user;
+                return true;
             }
+            return false;
         }
 
         function logout() {
@@ -336,15 +327,15 @@
         // ===================== RENDERIZAR LISTAS =====================
         // --- Clientes ---
         function renderClientes() {
-            const rows = query("SELECT * FROM clientes ORDER BY nombre");
+            const clientes = DB.getAll('clientes');
             const container = document.getElementById('clientesList');
-            if (rows.length === 0) {
+            if (clientes.length === 0) {
                 container.innerHTML = '<div class="alert alert-info">No hay clientes registrados.</div>';
                 return;
             }
             let html = `<table class="table table-striped table-bordered">
                 <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Dirección</th><th class="table-actions">Acciones</th></tr></thead><tbody>`;
-            rows.forEach(c => {
+            clientes.forEach(c => {
                 html += `<tr>
                     <td>${escapeHtml(c.nombre)}</td>
                     <td>${escapeHtml(c.email)}</td>
@@ -361,13 +352,13 @@
 
             container.querySelectorAll('.btn-editar-cliente').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    editarCliente(this.dataset.id);
+                    editarCliente(parseInt(this.dataset.id));
                 });
             });
             container.querySelectorAll('.btn-eliminar-cliente').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (confirm('¿Eliminar este cliente?')) {
-                        run("DELETE FROM clientes WHERE id = ?", [this.dataset.id]);
+                        DB.delete('clientes', parseInt(this.dataset.id));
                         renderClientes();
                         cargarSelectClientes();
                     }
@@ -376,9 +367,8 @@
         }
 
         function editarCliente(id) {
-            const rows = query("SELECT * FROM clientes WHERE id = ?", [id]);
-            if (rows.length === 0) return;
-            const c = rows[0];
+            const c = DB.findById('clientes', id);
+            if (!c) return;
             document.getElementById('clienteId').value = c.id;
             document.getElementById('clienteNombre').value = c.nombre || '';
             document.getElementById('clienteEmail').value = c.email || '';
@@ -402,15 +392,15 @@
 
         // --- Productos ---
         function renderProductos() {
-            const rows = query("SELECT * FROM productos ORDER BY nombre");
+            const productos = DB.getAll('productos');
             const container = document.getElementById('productosList');
-            if (rows.length === 0) {
+            if (productos.length === 0) {
                 container.innerHTML = '<div class="alert alert-info">No hay productos registrados.</div>';
                 return;
             }
             let html = `<table class="table table-striped table-bordered">
                 <thead><tr><th>Nombre</th><th>Descripción</th><th>Precio</th><th>Stock</th><th class="table-actions">Acciones</th></tr></thead><tbody>`;
-            rows.forEach(p => {
+            productos.forEach(p => {
                 html += `<tr>
                     <td>${escapeHtml(p.nombre)}</td>
                     <td>${escapeHtml(p.descripcion)}</td>
@@ -427,13 +417,13 @@
 
             container.querySelectorAll('.btn-editar-producto').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    editarProducto(this.dataset.id);
+                    editarProducto(parseInt(this.dataset.id));
                 });
             });
             container.querySelectorAll('.btn-eliminar-producto').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (confirm('¿Eliminar este producto?')) {
-                        run("DELETE FROM productos WHERE id = ?", [this.dataset.id]);
+                        DB.delete('productos', parseInt(this.dataset.id));
                         renderProductos();
                     }
                 });
@@ -441,9 +431,8 @@
         }
 
         function editarProducto(id) {
-            const rows = query("SELECT * FROM productos WHERE id = ?", [id]);
-            if (rows.length === 0) return;
-            const p = rows[0];
+            const p = DB.findById('productos', id);
+            if (!p) return;
             document.getElementById('productoId').value = p.id;
             document.getElementById('productoNombre').value = p.nombre || '';
             document.getElementById('productoDescripcion').value = p.descripcion || '';
@@ -467,23 +456,22 @@
 
         // --- Pedidos ---
         function renderPedidos() {
-            const rows = query(`
-                SELECT p.id, p.fecha, p.total, c.nombre as cliente_nombre
-                FROM pedidos p
-                LEFT JOIN clientes c ON p.cliente_id = c.id
-                ORDER BY p.id DESC
-            `);
+            const pedidos = DB.getAll('pedidos');
             const container = document.getElementById('pedidosList');
-            if (rows.length === 0) {
+            if (pedidos.length === 0) {
                 container.innerHTML = '<div class="alert alert-info">No hay pedidos registrados.</div>';
                 return;
             }
+            // Ordenar por id descendente
+            pedidos.sort((a, b) => b.id - a.id);
             let html = `<table class="table table-striped table-bordered">
                 <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th class="table-actions">Acciones</th></tr></thead><tbody>`;
-            rows.forEach(p => {
+            pedidos.forEach(p => {
+                const cliente = DB.findById('clientes', p.cliente_id);
+                const nombreCliente = cliente ? cliente.nombre : 'Sin cliente';
                 html += `<tr>
                     <td>${p.id}</td>
-                    <td>${escapeHtml(p.cliente_nombre) || 'Sin cliente'}</td>
+                    <td>${escapeHtml(nombreCliente)}</td>
                     <td>${p.fecha}</td>
                     <td>$${Number(p.total).toFixed(2)}</td>
                     <td>
@@ -497,15 +485,19 @@
 
             container.querySelectorAll('.btn-editar-pedido').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    editarPedido(this.dataset.id);
+                    editarPedido(parseInt(this.dataset.id));
                 });
             });
             container.querySelectorAll('.btn-eliminar-pedido').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (confirm('¿Eliminar este pedido y sus detalles?')) {
-                        const id = this.dataset.id;
-                        run("DELETE FROM pedido_detalles WHERE pedido_id = ?", [id]);
-                        run("DELETE FROM pedidos WHERE id = ?", [id]);
+                        const id = parseInt(this.dataset.id);
+                        // Eliminar detalles
+                        let detalles = DB.getAll('pedido_detalles');
+                        detalles = detalles.filter(d => d.pedido_id !== id);
+                        DB.saveAll('pedido_detalles', detalles);
+                        // Eliminar pedido
+                        DB.delete('pedidos', id);
                         renderPedidos();
                     }
                 });
@@ -515,7 +507,7 @@
         // --- Formulario de Pedido ---
         function cargarSelectClientes() {
             const select = document.getElementById('pedidoCliente');
-            const clientes = query("SELECT id, nombre FROM clientes ORDER BY nombre");
+            const clientes = DB.getAll('clientes');
             select.innerHTML = '<option value="">Seleccione un cliente</option>';
             clientes.forEach(c => {
                 select.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
@@ -523,13 +515,12 @@
         }
 
         function cargarSelectProductosEnDetalle(selectId) {
-            const productos = query("SELECT id, nombre, precio FROM productos ORDER BY nombre");
+            const productos = DB.getAll('productos');
             const select = document.getElementById(selectId);
             select.innerHTML = '<option value="">Seleccione producto</option>';
             productos.forEach(p => {
                 select.innerHTML += `<option value="${p.id}" data-precio="${p.precio}">${escapeHtml(p.nombre)} ($${Number(p.precio).toFixed(2)})</option>`;
             });
-            // Al cambiar, actualizar precio unitario sugerido
             select.addEventListener('change', function() {
                 const precio = this.options[this.selectedIndex]?.dataset?.precio || 0;
                 const row = this.closest('.pedido-detalle-item');
@@ -570,17 +561,14 @@
             `;
             container.appendChild(div);
 
-            // Configurar select de productos en esta fila
             cargarSelectProductosEnDetalle(`detalleProducto_${index}`);
             if (productoId) {
                 const select = div.querySelector('.detalle-producto');
                 select.value = productoId;
-                // Forzar actualización de precio
                 const event = new Event('change');
                 select.dispatchEvent(event);
             }
 
-            // Eventos para recalcular total
             div.querySelectorAll('.detalle-cantidad, .detalle-precio-unitario, .detalle-producto').forEach(el => {
                 el.addEventListener('change', function() { calcularTotalPedido(); });
                 el.addEventListener('input', function() { calcularTotalPedido(); });
@@ -619,23 +607,20 @@
             document.getElementById('pedidoFormTitle').textContent = 'Nuevo Pedido';
             document.getElementById('pedidoSubmitBtn').textContent = 'Guardar';
             document.getElementById('pedidoFormContainer').classList.add('hidden');
-            // Agregar una fila de detalle por defecto
             agregarFilaDetalle();
         }
 
         function editarPedido(id) {
-            // Cargar datos del pedido
-            const pedRows = query("SELECT * FROM pedidos WHERE id = ?", [id]);
-            if (pedRows.length === 0) return;
-            const ped = pedRows[0];
+            const ped = DB.findById('pedidos', id);
+            if (!ped) return;
             document.getElementById('pedidoId').value = ped.id;
             document.getElementById('pedidoCliente').value = ped.cliente_id || '';
             document.getElementById('pedidoFecha').value = ped.fecha || getDateToday();
             document.getElementById('pedidoFormTitle').textContent = 'Editar Pedido';
             document.getElementById('pedidoSubmitBtn').textContent = 'Actualizar';
 
-            // Cargar detalles
-            const detalles = query("SELECT * FROM pedido_detalles WHERE pedido_id = ?", [id]);
+            // Obtener detalles
+            const detalles = DB.getAll('pedido_detalles').filter(d => d.pedido_id === id);
             const container = document.getElementById('pedidoDetalleContainer');
             container.innerHTML = '';
             if (detalles.length === 0) {
@@ -660,7 +645,6 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('mainSection').classList.remove('hidden');
                 document.getElementById('userDisplay').textContent = `Bienvenido, ${user}`;
-                // Cargar datos iniciales
                 renderClientes();
                 renderProductos();
                 renderPedidos();
@@ -689,11 +673,9 @@
             const direccion = document.getElementById('clienteDireccion').value.trim();
             if (!nombre) { alert('El nombre es obligatorio'); return; }
             if (id) {
-                run("UPDATE clientes SET nombre = ?, email = ?, telefono = ?, direccion = ? WHERE id = ?",
-                    [nombre, email, telefono, direccion, id]);
+                DB.update('clientes', parseInt(id), { nombre, email, telefono, direccion });
             } else {
-                run("INSERT INTO clientes (nombre, email, telefono, direccion) VALUES (?, ?, ?, ?)",
-                    [nombre, email, telefono, direccion]);
+                DB.insert('clientes', { nombre, email, telefono, direccion });
             }
             resetClienteForm();
             renderClientes();
@@ -716,11 +698,9 @@
             if (!nombre) { alert('El nombre es obligatorio'); return; }
             if (isNaN(precio) || precio < 0) { alert('Precio inválido'); return; }
             if (id) {
-                run("UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?",
-                    [nombre, descripcion, precio, stock, id]);
+                DB.update('productos', parseInt(id), { nombre, descripcion, precio, stock });
             } else {
-                run("INSERT INTO productos (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)",
-                    [nombre, descripcion, precio, stock]);
+                DB.insert('productos', { nombre, descripcion, precio, stock });
             }
             resetProductoForm();
             renderProductos();
@@ -742,36 +722,39 @@
         document.getElementById('pedidoForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const id = document.getElementById('pedidoId').value;
-            const cliente_id = document.getElementById('pedidoCliente').value;
+            const cliente_id = parseInt(document.getElementById('pedidoCliente').value);
             const fecha = document.getElementById('pedidoFecha').value;
             if (!cliente_id) { alert('Seleccione un cliente'); return; }
             if (!fecha) { alert('Ingrese una fecha'); return; }
 
             const total = calcularTotalPedido();
-            let pedidoId = id;
+            let pedidoId = id ? parseInt(id) : null;
 
-            if (id) {
+            if (pedidoId) {
                 // Actualizar pedido existente
-                run("UPDATE pedidos SET cliente_id = ?, fecha = ?, total = ? WHERE id = ?",
-                    [cliente_id, fecha, total, id]);
+                DB.update('pedidos', pedidoId, { cliente_id, fecha, total });
                 // Eliminar detalles antiguos
-                run("DELETE FROM pedido_detalles WHERE pedido_id = ?", [id]);
+                let detalles = DB.getAll('pedido_detalles');
+                detalles = detalles.filter(d => d.pedido_id !== pedidoId);
+                DB.saveAll('pedido_detalles', detalles);
             } else {
-                // Insertar nuevo pedido
-                run("INSERT INTO pedidos (cliente_id, fecha, total) VALUES (?, ?, ?)",
-                    [cliente_id, fecha, total]);
-                const lastId = query("SELECT last_insert_rowid() as id");
-                pedidoId = lastId[0].id;
+                // Nuevo pedido
+                const nuevo = DB.insert('pedidos', { cliente_id, fecha, total });
+                pedidoId = nuevo.id;
             }
 
-            // Insertar los detalles (tanto para nuevo como para edición)
+            // Insertar detalles (tanto para nuevo como edición)
             document.querySelectorAll('.pedido-detalle-item').forEach(row => {
-                const producto_id = row.querySelector('.detalle-producto').value;
+                const producto_id = parseInt(row.querySelector('.detalle-producto').value);
                 const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
                 const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
                 if (producto_id && cantidad > 0) {
-                    run("INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
-                        [pedidoId, producto_id, cantidad, precio_unitario]);
+                    DB.insert('pedido_detalles', {
+                        pedido_id: pedidoId,
+                        producto_id,
+                        cantidad,
+                        precio_unitario
+                    });
                 }
             });
 
@@ -780,20 +763,12 @@
         });
 
         // ===================== INICIO =====================
-        // Esperar a que la página y todos los scripts estén cargados
-        window.onload = function() {
-            const success = initDatabase();
-            if (!success) {
-                alert('No se pudo inicializar la base de datos. La aplicación no funcionará correctamente.');
-                return;
-            }
-            // Mostrar login por defecto
-            document.getElementById('loginSection').classList.remove('hidden');
-            document.getElementById('mainSection').classList.add('hidden');
-            // Precargar select de clientes (aunque esté oculto)
-            cargarSelectClientes();
-            console.log('Sistema de Ventas iniciado. Usuario admin/admin');
-        };
+        // Mostrar login por defecto
+        document.getElementById('loginSection').classList.remove('hidden');
+        document.getElementById('mainSection').classList.add('hidden');
+        cargarSelectClientes();
+
+        console.log('Sistema de Ventas iniciado (localStorage). Usuario admin/admin');
 
     })();
 </script>

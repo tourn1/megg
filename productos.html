@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - El closet de Megg</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #f8f5f2; padding-bottom: 30px; }
+        .bg-dark-custom { background: #3d2c2c !important; }
+        .btn-primary-custom { background: #b58383; border-color: #b58383; color: #fff; }
+        .btn-primary-custom:hover { background: #9e6e6e; color: #fff; }
+        .card-shadow { box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: none; border-radius: 16px; }
+        .search-box { background: #fff; border-radius: 50px; padding: 0.3rem 1rem; border: 1px solid #ddd; }
+        .search-box input { border: none; outline: none; background: transparent; width: 100%; padding: 0.4rem 0; }
+        .search-box i { color: #b58383; }
+        .brand-logo { font-weight: 700; font-size: 1.4rem; color: #f0e6e0 !important; text-decoration: none; }
+        .brand-logo i { color: #d4a5a5; margin-right: 8px; }
+        .navbar { border-radius: 0 0 20px 20px; padding: 0.8rem 1rem; }
+        .navbar .nav-link { color: #f0e6e0 !important; }
+        .navbar .nav-link.active, .navbar .nav-link:hover { color: #d4a5a5 !important; }
+        .hidden { display: none; }
+
+        /* Foto thumbnail */
+        .foto-thumb {
+            width: 44px; height: 44px; border-radius: 8px;
+            object-fit: cover; border: 2px solid #e8d8d8;
+            transition: transform .15s; cursor: zoom-in;
+        }
+        .foto-thumb:hover { transform: scale(1.12); border-color: #b58383; }
+        .foto-placeholder {
+            width: 44px; height: 44px; border-radius: 8px;
+            background: #f0e6e0; display: flex; align-items: center; justify-content: center;
+            color: #b58383; font-size: 1.1rem;
+        }
+
+        /* Foto upload preview */
+        .foto-preview-box {
+            width: 100px; height: 100px; border-radius: 12px;
+            border: 2px dashed #b58383; display: flex; align-items: center;
+            justify-content: center; overflow: hidden; cursor: pointer;
+            position: relative; background: #fdf8f8;
+        }
+        .foto-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-preview-box .placeholder-icon { color: #b58383; font-size: 1.8rem; }
+        #btnQuitarFotoP {
+            position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
+            border-radius: 50%; background: #dc3545; border: none; color: #fff;
+            font-size: .65rem; line-height: 1; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <div id="navbarContainer"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h3><i class="fas fa-boxes"></i> Productos</h3>
+        <button class="btn btn-primary-custom" id="btnNuevoProducto"><i class="fas fa-plus"></i> Nuevo Producto</button>
+    </div>
+
+    <div id="productosList">Cargando productos...</div>
+
+    <div id="productoFormContainer" class="hidden mt-3 p-4 bg-white rounded-4 card-shadow">
+        <h5 id="productoFormTitle">Nuevo Producto</h5>
+        <form id="productoForm">
+            <input type="hidden" id="productoId">
+            <input type="hidden" id="productoFoto">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" id="productoNombre" required>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label>Descripción</label>
+                    <input type="text" class="form-control" id="productoDescripcion">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label>Precio Costo</label>
+                    <input type="number" step="0.01" class="form-control" id="productoPrecioCosto" value="0">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label>Precio Venta</label>
+                    <input type="number" step="0.01" class="form-control" id="productoPrecioVenta" required>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label>Stock</label>
+                    <input type="number" class="form-control" id="productoStock" value="1" required>
+                </div>
+                <div class="col-12 mb-3">
+                    <label>Foto del producto <span class="text-muted small">(opcional)</span></label>
+                    <div class="d-flex align-items-center gap-3 mt-1">
+                        <div class="foto-preview-box" id="fotoPBox" onclick="document.getElementById('productoFotoFile').click()">
+                            <img id="fotoPPreviewImg" class="hidden" alt="preview">
+                            <i class="fas fa-camera placeholder-icon" id="fotoPPlaceholder"></i>
+                            <button type="button" id="btnQuitarFotoP" class="hidden" title="Quitar foto">✕</button>
+                        </div>
+                        <div>
+                            <input type="file" id="productoFotoFile" accept="image/*" class="hidden">
+                            <label for="productoFotoFile" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-upload"></i> Seleccionar
+                            </label>
+                            <div class="text-muted small mt-1">JPG, PNG, WEBP</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2">
+                <button type="submit" class="btn btn-primary-custom" id="productoSubmitBtn">Guardar</button>
+                <button type="button" class="btn btn-secondary" id="productoCancelBtn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+<script>
+    renderNavbar('productos');
+
+    // ── Foto form ───────────────────────────────────────────────────────────────
+    document.getElementById('productoFotoFile').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            setFotoPPreview(e.target.result);
+            document.getElementById('productoFoto').value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('btnQuitarFotoP').addEventListener('click', function(e) {
+        e.stopPropagation();
+        clearFotoPPreview();
+        document.getElementById('productoFoto').value = '';
+        document.getElementById('productoFotoFile').value = '';
+    });
+
+    function setFotoPPreview(src) {
+        const img = document.getElementById('fotoPPreviewImg');
+        const placeholder = document.getElementById('fotoPPlaceholder');
+        const btn = document.getElementById('btnQuitarFotoP');
+        const url = src && !src.startsWith('data:') ? getFotoUrl(src) : src;
+        if (url) {
+            img.src = url;
+            img.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            btn.classList.remove('hidden');
+        } else {
+            clearFotoPPreview();
+        }
+    }
+
+    function clearFotoPPreview() {
+        const img = document.getElementById('fotoPPreviewImg');
+        const placeholder = document.getElementById('fotoPPlaceholder');
+        const btn = document.getElementById('btnQuitarFotoP');
+        img.src = ''; img.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        btn.classList.add('hidden');
+    }
+
+    // ── Carga de productos ──────────────────────────────────────────────────────
+    let productosCache = [];
+
+    async function cargarProductos() {
+        const container = document.getElementById('productosList');
+        try {
+            const productos = await apiRequest('productos', 'GET');
+            if (!Array.isArray(productos)) {
+                throw new Error(typeof productos === 'object' && productos !== null
+                    ? (productos.error || JSON.stringify(productos)) : 'Respuesta inválida del servidor');
+            }
+            productosCache = productos;
+            const search = getSearchTerm();
+            const filtered = filterData(productos, search, ['nombre', 'descripcion', 'precio_costo', 'precio_venta', 'precio', 'stock']);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay productos disponibles.</div>';
+                return;
+            }
+
+            let html = `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">
+                <thead class="table-light"><tr>
+                    <th style="width:56px">Foto</th>
+                    <th>Nombre</th><th>Descripción</th>
+                    <th>P. Costo</th><th>P. Venta</th><th>Stock</th>
+                    <th style="width:120px">Acciones</th>
+                </tr></thead><tbody>`;
+
+            filtered.forEach((p, idx) => {
+                const fotoHtml = p.foto
+                    ? `<img class="foto-thumb" data-pfoto-idx="${idx}" alt="${escapeHtml(p.nombre)}">`
+                    : `<div class="foto-placeholder"><i class="fas fa-box"></i></div>`;
+                const precioCostoVal = p.precio_costo !== undefined ? Number(p.precio_costo) : 0;
+                const precioVentaVal = (p.precio_venta !== undefined && p.precio_venta !== null) ? Number(p.precio_venta) : Number(p.precio || 0);
+
+                html += `<tr>
+                    <td class="text-center">${fotoHtml}</td>
+                    <td>${escapeHtml(p.nombre)}</td>
+                    <td>${escapeHtml(p.descripcion || '—')}</td>
+                    <td>$${precioCostoVal.toFixed(2)}</td>
+                    <td>$${precioVentaVal.toFixed(2)}</td>
+                    <td>${p.stock !== undefined ? p.stock : 1}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1 btn-edit" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger btn-del" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+
+            // Assign foto URLs + lightbox after innerHTML
+            container.querySelectorAll('img[data-pfoto-idx]').forEach(img => {
+                const idx = parseInt(img.dataset.pfotoIdx);
+                const p = filtered[idx];
+                if (p && p.foto) {
+                    const url = getFotoUrl(p.foto);
+                    if (url) {
+                        img.src = url;
+                        img.addEventListener('click', () => openLightbox(url, p.nombre));
+                        img.onerror = () => {
+                            img.style.display = 'none';
+                            img.parentElement.innerHTML = `<div class="foto-placeholder"><i class="fas fa-box"></i></div>`;
+                        };
+                    }
+                }
+            });
+
+            const productosMap = {};
+            productos.forEach(p => productosMap[p.id] = p);
+
+            container.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const p = productosMap[parseInt(btn.dataset.id)];
+                    if (p) editarProducto(p);
+                });
+            });
+            container.querySelectorAll('.btn-del').forEach(btn => {
+                btn.addEventListener('click', () => eliminarProducto(parseInt(btn.dataset.id)));
+            });
+        } catch (e) {
+            container.innerHTML = `<div class="alert alert-danger">Error al cargar productos: ${escapeHtml(e.message)}</div>`;
+        }
+    }
+
+    function editarProducto(p) {
+        if (!p) return;
+        document.getElementById('productoId').value          = p.id;
+        document.getElementById('productoNombre').value      = p.nombre      || '';
+        document.getElementById('productoDescripcion').value = p.descripcion || '';
+        document.getElementById('productoPrecioCosto').value = p.precio_costo !== undefined ? p.precio_costo : 0;
+        document.getElementById('productoPrecioVenta').value = p.precio_venta || p.precio || '';
+        document.getElementById('productoStock').value       = p.stock !== undefined ? p.stock : 1;
+        document.getElementById('productoFoto').value        = p.foto        || '';
+        document.getElementById('productoFotoFile').value    = '';
+
+        if (p.foto && !p.foto.startsWith('data:')) {
+            setFotoPPreview(p.foto);
+        } else {
+            clearFotoPPreview();
+        }
+
+        document.getElementById('productoFormTitle').textContent   = 'Editar Producto';
+        document.getElementById('productoSubmitBtn').textContent   = 'Actualizar';
+        document.getElementById('productoFormContainer').classList.remove('hidden');
+        document.getElementById('productoFormContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function eliminarProducto(id) {
+        if (!confirm('¿Desea eliminar este producto?')) return;
+        try {
+            await apiRequest('productos', 'DELETE', { id });
+            cargarProductos();
+        } catch (e) {
+            alert('Error al eliminar: ' + e.message);
+        }
+    }
+
+    function resetProductoForm() {
+        document.getElementById('productoId').value          = '';
+        document.getElementById('productoNombre').value      = '';
+        document.getElementById('productoDescripcion').value = '';
+        document.getElementById('productoPrecioCosto').value = '0';
+        document.getElementById('productoPrecioVenta').value = '';
+        document.getElementById('productoStock').value       = '1';
+        document.getElementById('productoFoto').value        = '';
+        document.getElementById('productoFotoFile').value    = '';
+        clearFotoPPreview();
+        document.getElementById('productoFormTitle').textContent  = 'Nuevo Producto';
+        document.getElementById('productoSubmitBtn').textContent  = 'Guardar';
+        document.getElementById('productoFormContainer').classList.add('hidden');
+    }
+
+    document.getElementById('btnNuevoProducto').addEventListener('click', () => {
+        resetProductoForm();
+        document.getElementById('productoFormContainer').classList.remove('hidden');
+    });
+
+    document.getElementById('productoCancelBtn').addEventListener('click', resetProductoForm);
+
+    document.getElementById('productoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('productoId').value;
+        const pVenta = parseFloat(document.getElementById('productoPrecioVenta').value) || 0;
+        const data = {
+            nombre:       document.getElementById('productoNombre').value.trim(),
+            descripcion:  document.getElementById('productoDescripcion').value.trim(),
+            precio_costo: parseFloat(document.getElementById('productoPrecioCosto').value) || 0,
+            precio_venta: pVenta,
+            precio:       pVenta,
+            stock:        parseInt(document.getElementById('productoStock').value) || 1,
+            foto:         document.getElementById('productoFoto').value
+        };
+        try {
+            if (id) {
+                data.id = parseInt(id);
+                await apiRequest('productos', 'PUT', data);
+            } else {
+                await apiRequest('productos', 'POST', data);
+            }
+            resetProductoForm();
+            cargarProductos();
+        } catch (err) {
+            alert('Error al guardar producto: ' + err.message);
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.target.id === 'globalSearch') cargarProductos();
+    });
+
+    cargarProductos();
+</script>
+</body>
+</html>

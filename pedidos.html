@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos - El closet de Megg</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #f8f5f2; padding-bottom: 30px; }
+        .bg-dark-custom { background: #3d2c2c !important; }
+        .btn-primary-custom { background: #b58383; border-color: #b58383; color: #fff; }
+        .btn-primary-custom:hover { background: #9e6e6e; color: #fff; }
+        .card-shadow { box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: none; border-radius: 16px; }
+        .search-box { background: #fff; border-radius: 50px; padding: 0.3rem 1rem; border: 1px solid #ddd; }
+        .search-box input { border: none; outline: none; background: transparent; width: 100%; padding: 0.4rem 0; }
+        .search-box i { color: #b58383; }
+        .brand-logo { font-weight: 700; font-size: 1.4rem; color: #f0e6e0 !important; text-decoration: none; }
+        .brand-logo i { color: #d4a5a5; margin-right: 8px; }
+        .navbar { border-radius: 0 0 20px 20px; padding: 0.8rem 1rem; }
+        .navbar .nav-link { color: #f0e6e0 !important; }
+        .navbar .nav-link.active, .navbar .nav-link:hover { color: #d4a5a5 !important; }
+        .badge-pagado { background: #a8c4a2; color: #2d4a2d; }
+        .badge-impagado { background: #f5c6c6; color: #7a3a3a; }
+        .pedido-detalle-item { background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #eee; }
+        .total-pedido { font-size: 1.6rem; font-weight: 700; color: #b58383; }
+        .hidden { display: none; }
+        .foto-thumb {
+            width: 44px; height: 44px; border-radius: 8px;
+            object-fit: cover; border: 2px solid #e8d8d8;
+            transition: transform .15s; cursor: zoom-in;
+        }
+        .foto-thumb:hover { transform: scale(1.12); border-color: #b58383; }
+        .foto-placeholder {
+            width: 44px; height: 44px; border-radius: 8px;
+            background: #f0e6e0; display: flex; align-items: center; justify-content: center;
+            color: #b58383; font-size: 1.1rem;
+        }
+        .foto-preview-box {
+            width: 90px; height: 90px; border-radius: 12px;
+            border: 2px dashed #b58383; display: flex; align-items: center;
+            justify-content: center; overflow: hidden; cursor: pointer; position: relative;
+            background: #fdf8f8;
+        }
+        .foto-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-preview-box .placeholder-icon { color: #b58383; font-size: 1.6rem; }
+        #btnQuitarFotoPed {
+            position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
+            border-radius: 50%; background: #dc3545; border: none; color: #fff;
+            font-size: .65rem; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <div id="navbarContainer"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h3><i class="fas fa-shopping-cart"></i> Pedidos</h3>
+        <button class="btn btn-primary-custom" id="btnNuevoPedido"><i class="fas fa-plus"></i> Nuevo Pedido</button>
+    </div>
+
+    <div id="pedidosList">Cargando pedidos...</div>
+
+    <div id="pedidoFormContainer" class="hidden mt-3 p-4 bg-white rounded-4 card-shadow">
+        <h5 id="pedidoFormTitle">Nuevo Pedido</h5>
+        <form id="pedidoForm">
+            <input type="hidden" id="pedidoId">
+            <input type="hidden" id="pedidoFoto">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label>Cliente</label>
+                    <select class="form-select" id="pedidoCliente" required></select>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label>Fecha</label>
+                    <input type="date" class="form-control" id="pedidoFecha" required>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="pedidoPagado">
+                    <label class="form-check-label" for="pedidoPagado">Pagado</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label>Foto del pedido <span class="text-muted small">(opcional, ej: comprobante)</span></label>
+                <div class="d-flex align-items-center gap-3 mt-1">
+                    <div class="foto-preview-box" id="fotoPedBox" onclick="document.getElementById('pedidoFotoFile').click()">
+                        <img id="fotoPedPreviewImg" class="hidden" alt="preview">
+                        <i class="fas fa-camera placeholder-icon" id="fotoPedPlaceholder"></i>
+                        <button type="button" id="btnQuitarFotoPed" class="hidden" title="Quitar foto">✕</button>
+                    </div>
+                    <div>
+                        <input type="file" id="pedidoFotoFile" accept="image/*" class="hidden">
+                        <label for="pedidoFotoFile" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-upload"></i> Seleccionar
+                        </label>
+                        <div class="text-muted small mt-1">JPG, PNG, WEBP</div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <h6>Detalle del Pedido</h6>
+            <div id="pedidoDetalleContainer"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="btnAgregarDetalle"><i class="fas fa-plus"></i> Agregar Producto</button>
+            <div class="mt-3">
+                <strong>Total: </strong><span id="pedidoTotalDisplay" class="total-pedido">0.00</span>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary-custom" id="pedidoSubmitBtn">Guardar</button>
+                <button type="button" class="btn btn-secondary" id="pedidoCancelBtn">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+<script>
+    renderNavbar('pedidos');
+    let listaProductosSelect = [];
+    let pedidosCache = [];
+
+    // ── Foto pedido ─────────────────────────────────────────────────────────────
+    document.getElementById('pedidoFotoFile').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            setFotoPedPreview(e.target.result);
+            document.getElementById('pedidoFoto').value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+    document.getElementById('btnQuitarFotoPed').addEventListener('click', e => {
+        e.stopPropagation();
+        clearFotoPedPreview();
+        document.getElementById('pedidoFoto').value = '';
+        document.getElementById('pedidoFotoFile').value = '';
+    });
+    function setFotoPedPreview(src) {
+        const img = document.getElementById('fotoPedPreviewImg');
+        const ph  = document.getElementById('fotoPedPlaceholder');
+        const btn = document.getElementById('btnQuitarFotoPed');
+        const url = src && !src.startsWith('data:') ? getFotoUrl(src) : src;
+        if (url) {
+            img.src = url; img.classList.remove('hidden');
+            ph.classList.add('hidden'); btn.classList.remove('hidden');
+        } else { clearFotoPedPreview(); }
+    }
+    function clearFotoPedPreview() {
+        const img = document.getElementById('fotoPedPreviewImg');
+        const ph  = document.getElementById('fotoPedPlaceholder');
+        const btn = document.getElementById('btnQuitarFotoPed');
+        img.src = ''; img.classList.add('hidden');
+        ph.classList.remove('hidden'); btn.classList.add('hidden');
+    }
+
+    async function cargarPedidos() {
+        const container = document.getElementById('pedidosList');
+        try {
+            const pedidos = await apiRequest('pedidos', 'GET');
+            if (!Array.isArray(pedidos)) {
+                throw new Error(typeof pedidos === 'object' && pedidos !== null ? (pedidos.error || JSON.stringify(pedidos)) : 'Respuesta inválida del servidor');
+            }
+            pedidosCache = pedidos;
+            const search = getSearchTerm();
+            const filtered = filterData(pedidos, search, ['id', 'cliente_nombre', 'fecha', 'total']);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay pedidos disponibles.</div>';
+                return;
+            }
+
+            let html = `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">
+                <thead class="table-light"><tr>
+                    <th style="width:56px">Foto</th>
+                    <th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th>
+                    <th style="width: 140px;">Acciones</th>
+                </tr></thead><tbody>`;
+            filtered.forEach((p, idx) => {
+                const isPagado = (p.pagado == 1 || p.pagado === true || p.pagado === '1' || p.pagado === 'true');
+                const badge = isPagado ? '<span class="badge badge-pagado">Pagado</span>' : '<span class="badge badge-impagado">Impagado</span>';
+                const fotoHtml = p.foto
+                    ? `<img class="foto-thumb" data-pedfoto-idx="${idx}" alt="pedido ${p.id}">`
+                    : `<div class="foto-placeholder"><i class="fas fa-receipt"></i></div>`;
+                html += `<tr>
+                    <td class="text-center">${fotoHtml}</td>
+                    <td>#${p.id}</td>
+                    <td>${escapeHtml(p.cliente_nombre || 'Cliente sin nombre')}</td>
+                    <td>${p.fecha}</td>
+                    <td>$${Number(p.total).toFixed(2)}</td>
+                    <td>${badge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1 btn-edit" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger btn-del" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+
+            // Assign foto URLs + lightbox
+            container.querySelectorAll('img[data-pedfoto-idx]').forEach(img => {
+                const idx = parseInt(img.dataset.pedfotoIdx);
+                const p = filtered[idx];
+                if (p && p.foto) {
+                    const url = getFotoUrl(p.foto);
+                    if (url) {
+                        img.src = url;
+                        img.addEventListener('click', () => openLightbox(url, `Pedido #${p.id}`));
+                        img.onerror = () => {
+                            img.style.display = 'none';
+                            img.parentElement.innerHTML = `<div class="foto-placeholder"><i class="fas fa-receipt"></i></div>`;
+                        };
+                    }
+                }
+            });
+
+            const pedidosMap = {};
+            pedidos.forEach(p => pedidosMap[p.id] = p);
+
+            container.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const p = pedidosMap[parseInt(btn.dataset.id)];
+                    if (p) editarPedido(p);
+                });
+            });
+            container.querySelectorAll('.btn-del').forEach(btn => {
+                btn.addEventListener('click', () => eliminarPedido(parseInt(btn.dataset.id)));
+            });
+        } catch (e) {
+            container.innerHTML = `<div class="alert alert-danger">Error al cargar pedidos: ${escapeHtml(e.message)}</div>`;
+        }
+    }
+
+    let tomSelectCliente = null;
+
+    async function cargarSelectClientes() {
+        try {
+            const clientes = await apiRequest('clientes_select', 'GET');
+            const select = document.getElementById('pedidoCliente');
+            if (tomSelectCliente) {
+                tomSelectCliente.destroy();
+                tomSelectCliente = null;
+            }
+            select.innerHTML = '<option value="">Seleccione cliente...</option>';
+            if (Array.isArray(clientes)) {
+                clientes.forEach(c => {
+                    select.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
+                });
+            }
+            tomSelectCliente = new TomSelect('#pedidoCliente', {
+                create: false,
+                placeholder: 'Buscar cliente...',
+                allowEmptyOption: true
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    async function precargarProductosSelect() {
+        try {
+            listaProductosSelect = await apiRequest('productos_select', 'GET');
+        } catch (e) { console.error(e); }
+    }
+
+    function agregarFilaDetalle(productoId = '', cantidad = 1, precioUnitario = 0) {
+        const container = document.getElementById('pedidoDetalleContainer');
+        const idx = container.children.length;
+        const div = document.createElement('div');
+        div.className = 'pedido-detalle-item row g-2 align-items-end';
+
+        let optionsHtml = '<option value="">Buscar producto...</option>';
+        if (Array.isArray(listaProductosSelect)) {
+            listaProductosSelect.forEach(p => {
+                optionsHtml += `<option value="${p.id}" data-precio="${p.precio}">${escapeHtml(p.nombre)} ($${Number(p.precio).toFixed(2)})</option>`;
+            });
+        }
+
+        div.innerHTML = `
+            <div class="col-md-4">
+                <label class="form-label">Producto</label>
+                <select class="form-select detalle-producto" required>${optionsHtml}</select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cantidad</label>
+                <input type="number" class="form-control detalle-cantidad" value="${cantidad}" min="1" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Precio U.</label>
+                <input type="number" step="0.01" class="form-control detalle-precio-unitario" value="${precioUnitario}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Subtotal</label>
+                <div class="fw-bold fs-6 mt-2">$<span class="detalle-subtotal">0.00</span></div>
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-danger btn-sm btn-del-det"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+
+        container.appendChild(div);
+
+        const select = div.querySelector('.detalle-producto');
+        const inputPu = div.querySelector('.detalle-precio-unitario');
+        const inputCant = div.querySelector('.detalle-cantidad');
+
+        const tsProd = new TomSelect(select, {
+            create: false,
+            placeholder: 'Buscar producto...',
+            allowEmptyOption: true
+        });
+
+        if (productoId) {
+            tsProd.setValue(String(productoId), true);
+            inputPu.value = precioUnitario;
+        }
+
+        tsProd.on('change', (val) => {
+            const opt = select.options[select.selectedIndex];
+            const precio = opt?.dataset?.precio || 0;
+            inputPu.value = precio;
+            calcularTotalPedido();
+        });
+
+        inputCant.addEventListener('input', calcularTotalPedido);
+        inputPu.addEventListener('input', calcularTotalPedido);
+
+        div.querySelector('.btn-del-det').addEventListener('click', () => {
+            if (container.children.length > 1) {
+                tsProd.destroy();
+                div.remove();
+                calcularTotalPedido();
+            }
+        });
+
+        calcularTotalPedido();
+    }
+
+    function calcularTotalPedido() {
+        let total = 0;
+        document.querySelectorAll('.pedido-detalle-item').forEach(row => {
+            const cant = parseFloat(row.querySelector('.detalle-cantidad').value) || 0;
+            const pu = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
+            const sub = cant * pu;
+            row.querySelector('.detalle-subtotal').textContent = sub.toFixed(2);
+            total += sub;
+        });
+        document.getElementById('pedidoTotalDisplay').textContent = total.toFixed(2);
+        return total;
+    }
+
+    async function editarPedido(ped) {
+        try {
+            if (!ped) return;
+
+            document.getElementById('pedidoId').value = ped.id;
+            if (tomSelectCliente) {
+                tomSelectCliente.setValue(ped.cliente_id ? String(ped.cliente_id) : '', true);
+            } else {
+                document.getElementById('pedidoCliente').value = ped.cliente_id || '';
+            }
+            document.getElementById('pedidoFecha').value = ped.fecha || getDateToday();
+            document.getElementById('pedidoPagado').checked = ped.pagado == 1;
+            document.getElementById('pedidoFoto').value = ped.foto || '';
+            document.getElementById('pedidoFotoFile').value = '';
+            if (ped.foto && !ped.foto.startsWith('data:')) {
+                setFotoPedPreview(ped.foto);
+            } else {
+                clearFotoPedPreview();
+            }
+
+            const detalles = await apiRequest('pedido_detalles', 'GET', null, `pedido_id=${ped.id}`);
+            const container = document.getElementById('pedidoDetalleContainer');
+            container.innerHTML = '';
+            if (detalles.length === 0) {
+                agregarFilaDetalle();
+            } else {
+                detalles.forEach(d => agregarFilaDetalle(d.producto_id, d.cantidad, d.precio_unitario));
+            }
+
+            document.getElementById('pedidoFormTitle').textContent = 'Editar Pedido';
+            document.getElementById('pedidoSubmitBtn').textContent = 'Actualizar';
+            document.getElementById('pedidoFormContainer').classList.remove('hidden');
+            document.getElementById('pedidoFormContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (e) {
+            alert('Error al cargar pedido: ' + e.message);
+        }
+    }
+
+    async function eliminarPedido(id) {
+        if (!confirm('¿Desea eliminar este pedido?')) return;
+        try {
+            await apiRequest('pedidos', 'DELETE', { id });
+            cargarPedidos();
+        } catch (e) {
+            alert('Error al eliminar: ' + e.message);
+        }
+    }
+
+    function resetPedidoForm() {
+        document.getElementById('pedidoId').value = '';
+        document.getElementById('pedidoFoto').value = '';
+        document.getElementById('pedidoFotoFile').value = '';
+        document.getElementById('pedidoFecha').value = getDateToday();
+        if (tomSelectCliente) {
+            tomSelectCliente.clear(true);
+        } else {
+            document.getElementById('pedidoCliente').value = '';
+        }
+        document.getElementById('pedidoPagado').checked = false;
+        document.getElementById('pedidoDetalleContainer').innerHTML = '';
+        document.getElementById('pedidoTotalDisplay').textContent = '0.00';
+        document.getElementById('pedidoFormTitle').textContent = 'Nuevo Pedido';
+        document.getElementById('pedidoSubmitBtn').textContent = 'Guardar';
+        document.getElementById('pedidoFormContainer').classList.add('hidden');
+        clearFotoPedPreview();
+        agregarFilaDetalle();
+    }
+
+    document.getElementById('btnNuevoPedido').addEventListener('click', () => {
+        resetPedidoForm();
+        document.getElementById('pedidoFormContainer').classList.remove('hidden');
+    });
+
+    document.getElementById('btnAgregarDetalle').addEventListener('click', () => agregarFilaDetalle());
+    document.getElementById('pedidoCancelBtn').addEventListener('click', resetPedidoForm);
+
+    document.getElementById('pedidoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('pedidoId').value;
+        const cliente_id = parseInt(document.getElementById('pedidoCliente').value);
+        const fecha = document.getElementById('pedidoFecha').value;
+        const pagado = document.getElementById('pedidoPagado').checked ? 1 : 0;
+        const total = calcularTotalPedido();
+
+        const detalles = [];
+        document.querySelectorAll('.pedido-detalle-item').forEach(row => {
+            const producto_id = parseInt(row.querySelector('.detalle-producto').value);
+            const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
+            const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
+            if (producto_id && cantidad > 0) {
+                detalles.push({ producto_id, cantidad, precio_unitario });
+            }
+        });
+
+        const data = { cliente_id, fecha, total, pagado, detalles,
+                       foto: document.getElementById('pedidoFoto').value };
+
+        try {
+            if (id) {
+                data.id = parseInt(id);
+                await apiRequest('pedidos', 'PUT', data);
+            } else {
+                await apiRequest('pedidos', 'POST', data);
+            }
+            resetPedidoForm();
+            cargarPedidos();
+        } catch (err) {
+            alert('Error al guardar pedido: ' + err.message);
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.target.id === 'globalSearch') cargarPedidos();
+    });
+
+    async function init() {
+        await cargarSelectClientes();
+        await precargarProductosSelect();
+        await cargarPedidos();
+    }
+
+    init();
+</script>
+</body>
+</html>

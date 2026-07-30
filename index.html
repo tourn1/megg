@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ventas</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body { padding-top: 20px; }
+        .login-card { max-width: 400px; margin: 50px auto; }
+        .table-actions { width: 120px; }
+        .pointer { cursor: pointer; }
+        .hidden { display: none; }
+        .pedido-detalle-item { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+        .total-pedido { font-size: 1.5rem; font-weight: bold; color: #198754; }
+        .nav-pills .nav-link.active { background-color: #0d6efd; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <!-- ============ LOGIN ============ -->
+    <div id="loginSection">
+        <div class="card login-card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h4><i class="fas fa-store"></i> Sistema de Ventas</h4>
+            </div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuario</label>
+                        <input type="text" class="form-control" id="username" value="admin" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" value="admin" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                    <div id="loginError" class="text-danger mt-2 text-center"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PANEL PRINCIPAL ============ -->
+    <div id="mainSection" class="hidden">
+        <!-- Barra de navegación -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark rounded mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand"><i class="fas fa-store"></i> Ventas</span>
+                <div class="d-flex">
+                    <span class="navbar-text me-3" id="userDisplay"></span>
+                    <button class="btn btn-outline-light btn-sm" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Salir</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Menú de pestañas -->
+        <ul class="nav nav-pills mb-3" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#clientesTab" type="button">Clientes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#productosTab" type="button">Productos</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pedidosTab" type="button">Pedidos</button>
+            </li>
+        </ul>
+
+        <!-- Contenido de pestañas -->
+        <div class="tab-content">
+            <!-- CLIENTES -->
+            <div class="tab-pane fade show active" id="clientesTab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3><i class="fas fa-users"></i> Clientes</h3>
+                    <button class="btn btn-success" id="btnNuevoCliente"><i class="fas fa-plus"></i> Nuevo</button>
+                </div>
+                <div id="clientesList"></div>
+                <!-- Formulario cliente (oculto) -->
+                <div id="clienteFormContainer" class="hidden mt-3 p-3 border rounded bg-light">
+                    <h5 id="clienteFormTitle">Nuevo Cliente</h5>
+                    <form id="clienteForm">
+                        <input type="hidden" id="clienteId">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label>Nombre</label>
+                                <input type="text" class="form-control" id="clienteNombre" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Email</label>
+                                <input type="email" class="form-control" id="clienteEmail">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Teléfono</label>
+                                <input type="text" class="form-control" id="clienteTelefono">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Dirección</label>
+                                <input type="text" class="form-control" id="clienteDireccion">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-primary" id="clienteSubmitBtn">Guardar</button>
+                            <button type="button" class="btn btn-secondary" id="clienteCancelBtn">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PRODUCTOS -->
+            <div class="tab-pane fade" id="productosTab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3><i class="fas fa-boxes"></i> Productos</h3>
+                    <button class="btn btn-success" id="btnNuevoProducto"><i class="fas fa-plus"></i> Nuevo</button>
+                </div>
+                <div id="productosList"></div>
+                <div id="productoFormContainer" class="hidden mt-3 p-3 border rounded bg-light">
+                    <h5 id="productoFormTitle">Nuevo Producto</h5>
+                    <form id="productoForm">
+                        <input type="hidden" id="productoId">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label>Nombre</label>
+                                <input type="text" class="form-control" id="productoNombre" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Descripción</label>
+                                <input type="text" class="form-control" id="productoDescripcion">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label>Precio</label>
+                                <input type="number" step="0.01" class="form-control" id="productoPrecio" required>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label>Stock</label>
+                                <input type="number" class="form-control" id="productoStock" required>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-primary" id="productoSubmitBtn">Guardar</button>
+                            <button type="button" class="btn btn-secondary" id="productoCancelBtn">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PEDIDOS -->
+            <div class="tab-pane fade" id="pedidosTab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3><i class="fas fa-shopping-cart"></i> Pedidos</h3>
+                    <button class="btn btn-success" id="btnNuevoPedido"><i class="fas fa-plus"></i> Nuevo</button>
+                </div>
+                <div id="pedidosList"></div>
+                <!-- Formulario pedido (oculto) -->
+                <div id="pedidoFormContainer" class="hidden mt-3 p-3 border rounded bg-light">
+                    <h5 id="pedidoFormTitle">Nuevo Pedido</h5>
+                    <form id="pedidoForm">
+                        <input type="hidden" id="pedidoId">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label>Cliente</label>
+                                <select class="form-select" id="pedidoCliente" required></select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Fecha</label>
+                                <input type="date" class="form-control" id="pedidoFecha" required>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Detalle del Pedido</h6>
+                        <div id="pedidoDetalleContainer">
+                            <!-- filas de detalle dinámicas -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnAgregarDetalle"><i class="fas fa-plus"></i> Agregar Producto</button>
+                        <div class="mt-3">
+                            <strong>Total: </strong><span id="pedidoTotalDisplay" class="total-pedido">0.00</span>
+                        </div>
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-primary" id="pedidoSubmitBtn">Guardar</button>
+                            <button type="button" class="btn btn-secondary" id="pedidoCancelBtn">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS (para pestañas y modales) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SQL.js (SQLite en el navegador) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+
+<script>
+    (function() {
+        'use strict';
+
+        // ===================== INICIALIZACIÓN DE SQLITE =====================
+        let db = null;
+
+        function initDatabase() {
+            // Intentar cargar base de datos guardada en localStorage
+            const stored = localStorage.getItem('ventasDB');
+            let data = null;
+            if (stored) {
+                try {
+                    data = new Uint8Array(JSON.parse(stored));
+                } catch (e) {}
+            }
+
+            // Crear o cargar la base de datos
+            if (data) {
+                db = new SQL.Database(data);
+            } else {
+                db = new SQL.Database();
+                // Crear tablas
+                db.run(`
+                    CREATE TABLE usuarios (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        usuario TEXT UNIQUE,
+                        clave TEXT
+                    );
+                    CREATE TABLE clientes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        nombre TEXT,
+                        email TEXT,
+                        telefono TEXT,
+                        direccion TEXT
+                    );
+                    CREATE TABLE productos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        nombre TEXT,
+                        descripcion TEXT,
+                        precio REAL,
+                        stock INTEGER
+                    );
+                    CREATE TABLE pedidos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        cliente_id INTEGER,
+                        fecha TEXT,
+                        total REAL,
+                        FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+                    );
+                    CREATE TABLE pedido_detalles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        pedido_id INTEGER,
+                        producto_id INTEGER,
+                        cantidad INTEGER,
+                        precio_unitario REAL,
+                        FOREIGN KEY(pedido_id) REFERENCES pedidos(id),
+                        FOREIGN KEY(producto_id) REFERENCES productos(id)
+                    );
+                `);
+                // Insertar usuario admin por defecto
+                db.run("INSERT INTO usuarios (usuario, clave) VALUES ('admin', 'admin')");
+                guardarDB();
+            }
+        }
+
+        function guardarDB() {
+            const data = db.export();
+            const arr = Array.from(data);
+            localStorage.setItem('ventasDB', JSON.stringify(arr));
+        }
+
+        // ===================== HELPERS =====================
+        function query(sql, params = []) {
+            const stmt = db.prepare(sql);
+            const rows = [];
+            while (stmt.step()) {
+                rows.push(stmt.getAsObject());
+            }
+            stmt.free();
+            return rows;
+        }
+
+        function run(sql, params = []) {
+            db.run(sql, params);
+            guardarDB();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                if (m === '"') return '&quot;';
+                return m;
+            });
+        }
+
+        function getDateToday() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // ===================== ESTADO DE SESIÓN =====================
+        let currentUser = null;
+
+        function login(username, password) {
+            const rows = query("SELECT * FROM usuarios WHERE usuario = ? AND clave = ?", [username, password]);
+            if (rows.length > 0) {
+                currentUser = rows[0];
+                return true;
+            }
+            return false;
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('mainSection').classList.add('hidden');
+        }
+
+        // ===================== RENDERIZAR LISTAS =====================
+
+        // --- Clientes ---
+        function renderClientes() {
+            const rows = query("SELECT * FROM clientes ORDER BY nombre");
+            const container = document.getElementById('clientesList');
+            if (rows.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay clientes registrados.</div>';
+                return;
+            }
+            let html = `<table class="table table-striped table-bordered">
+                <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Dirección</th><th class="table-actions">Acciones</th></tr></thead><tbody>`;
+            rows.forEach(c => {
+                html += `<tr>
+                    <td>${escapeHtml(c.nombre)}</td>
+                    <td>${escapeHtml(c.email)}</td>
+                    <td>${escapeHtml(c.telefono)}</td>
+                    <td>${escapeHtml(c.direccion)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary btn-editar-cliente" data-id="${c.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="${c.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+
+            // Eventos
+            container.querySelectorAll('.btn-editar-cliente').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    editarCliente(id);
+                });
+            });
+            container.querySelectorAll('.btn-eliminar-cliente').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    if (confirm('¿Eliminar este cliente?')) {
+                        run("DELETE FROM clientes WHERE id = ?", [id]);
+                        renderClientes();
+                    }
+                });
+            });
+        }
+
+        function editarCliente(id) {
+            const rows = query("SELECT * FROM clientes WHERE id = ?", [id]);
+            if (rows.length === 0) return;
+            const c = rows[0];
+            document.getElementById('clienteId').value = c.id;
+            document.getElementById('clienteNombre').value = c.nombre || '';
+            document.getElementById('clienteEmail').value = c.email || '';
+            document.getElementById('clienteTelefono').value = c.telefono || '';
+            document.getElementById('clienteDireccion').value = c.direccion || '';
+            document.getElementById('clienteFormTitle').textContent = 'Editar Cliente';
+            document.getElementById('clienteFormContainer').classList.remove('hidden');
+            document.getElementById('clienteSubmitBtn').textContent = 'Actualizar';
+        }
+
+        function resetClienteForm() {
+            document.getElementById('clienteId').value = '';
+            document.getElementById('clienteNombre').value = '';
+            document.getElementById('clienteEmail').value = '';
+            document.getElementById('clienteTelefono').value = '';
+            document.getElementById('clienteDireccion').value = '';
+            document.getElementById('clienteFormTitle').textContent = 'Nuevo Cliente';
+            document.getElementById('clienteSubmitBtn').textContent = 'Guardar';
+            document.getElementById('clienteFormContainer').classList.add('hidden');
+        }
+
+        // --- Productos ---
+        function renderProductos() {
+            const rows = query("SELECT * FROM productos ORDER BY nombre");
+            const container = document.getElementById('productosList');
+            if (rows.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay productos registrados.</div>';
+                return;
+            }
+            let html = `<table class="table table-striped table-bordered">
+                <thead><tr><th>Nombre</th><th>Descripción</th><th>Precio</th><th>Stock</th><th class="table-actions">Acciones</th></tr></thead><tbody>`;
+            rows.forEach(p => {
+                html += `<tr>
+                    <td>${escapeHtml(p.nombre)}</td>
+                    <td>${escapeHtml(p.descripcion)}</td>
+                    <td>$${Number(p.precio).toFixed(2)}</td>
+                    <td>${p.stock}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary btn-editar-producto" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger btn-eliminar-producto" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+
+            container.querySelectorAll('.btn-editar-producto').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    editarProducto(id);
+                });
+            });
+            container.querySelectorAll('.btn-eliminar-producto').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    if (confirm('¿Eliminar este producto?')) {
+                        run("DELETE FROM productos WHERE id = ?", [id]);
+                        renderProductos();
+                    }
+                });
+            });
+        }
+
+        function editarProducto(id) {
+            const rows = query("SELECT * FROM productos WHERE id = ?", [id]);
+            if (rows.length === 0) return;
+            const p = rows[0];
+            document.getElementById('productoId').value = p.id;
+            document.getElementById('productoNombre').value = p.nombre || '';
+            document.getElementById('productoDescripcion').value = p.descripcion || '';
+            document.getElementById('productoPrecio').value = p.precio || '';
+            document.getElementById('productoStock').value = p.stock || '';
+            document.getElementById('productoFormTitle').textContent = 'Editar Producto';
+            document.getElementById('productoFormContainer').classList.remove('hidden');
+            document.getElementById('productoSubmitBtn').textContent = 'Actualizar';
+        }
+
+        function resetProductoForm() {
+            document.getElementById('productoId').value = '';
+            document.getElementById('productoNombre').value = '';
+            document.getElementById('productoDescripcion').value = '';
+            document.getElementById('productoPrecio').value = '';
+            document.getElementById('productoStock').value = '';
+            document.getElementById('productoFormTitle').textContent = 'Nuevo Producto';
+            document.getElementById('productoSubmitBtn').textContent = 'Guardar';
+            document.getElementById('productoFormContainer').classList.add('hidden');
+        }
+
+        // --- Pedidos ---
+        function renderPedidos() {
+            const rows = query(`
+                SELECT p.id, p.fecha, p.total, c.nombre as cliente_nombre
+                FROM pedidos p
+                LEFT JOIN clientes c ON p.cliente_id = c.id
+                ORDER BY p.id DESC
+            `);
+            const container = document.getElementById('pedidosList');
+            if (rows.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay pedidos registrados.</div>';
+                return;
+            }
+            let html = `<table class="table table-striped table-bordered">
+                <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th class="table-actions">Acciones</th></tr></thead><tbody>`;
+            rows.forEach(p => {
+                html += `<tr>
+                    <td>${p.id}</td>
+                    <td>${escapeHtml(p.cliente_nombre) || 'Sin cliente'}</td>
+                    <td>${p.fecha}</td>
+                    <td>$${Number(p.total).toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary btn-editar-pedido" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger btn-eliminar-pedido" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+
+            container.querySelectorAll('.btn-editar-pedido').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    editarPedido(id);
+                });
+            });
+            container.querySelectorAll('.btn-eliminar-pedido').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    if (confirm('¿Eliminar este pedido y sus detalles?')) {
+                        run("DELETE FROM pedido_detalles WHERE pedido_id = ?", [id]);
+                        run("DELETE FROM pedidos WHERE id = ?", [id]);
+                        renderPedidos();
+                    }
+                });
+            });
+        }
+
+        // --- Formulario de Pedido (Dinámico) ---
+        function cargarSelectClientes() {
+            const select = document.getElementById('pedidoCliente');
+            const clientes = query("SELECT id, nombre FROM clientes ORDER BY nombre");
+            select.innerHTML = '<option value="">Seleccione un cliente</option>';
+            clientes.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
+            });
+        }
+
+        function cargarSelectProductosEnDetalle(selectId) {
+            const productos = query("SELECT id, nombre, precio FROM productos ORDER BY nombre");
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Seleccione producto</option>';
+            productos.forEach(p => {
+                select.innerHTML += `<option value="${p.id}" data-precio="${p.precio}">${escapeHtml(p.nombre)} ($${Number(p.precio).toFixed(2)})</option>`;
+            });
+            // Al cambiar, actualizar precio unitario sugerido
+            select.addEventListener('change', function() {
+                const precio = this.options[this.selectedIndex]?.dataset?.precio || 0;
+                const row = this.closest('.pedido-detalle-item');
+                if (row) {
+                    const pu = row.querySelector('.detalle-precio-unitario');
+                    if (pu) pu.value = precio;
+                    calcularTotalPedido();
+                }
+            });
+        }
+
+        function agregarFilaDetalle(productoId = '', cantidad = 1, precioUnitario = 0) {
+            const container = document.getElementById('pedidoDetalleContainer');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'pedido-detalle-item row g-2 align-items-end';
+            div.dataset.index = index;
+            div.innerHTML = `
+                <div class="col-md-4">
+                    <label class="form-label">Producto</label>
+                    <select class="form-select detalle-producto" id="detalleProducto_${index}" required></select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-control detalle-cantidad" value="${cantidad}" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Precio Unitario</label>
+                    <input type="number" step="0.01" class="form-control detalle-precio-unitario" value="${precioUnitario}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Subtotal</label>
+                    <span class="detalle-subtotal form-control-plaintext">0.00</span>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger btn-sm btn-eliminar-detalle"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            container.appendChild(div);
+
+            // Configurar select de productos en esta fila
+            cargarSelectProductosEnDetalle(`detalleProducto_${index}`);
+            if (productoId) {
+                const select = div.querySelector('.detalle-producto');
+                select.value = productoId;
+                // Forzar actualización de precio
+                const event = new Event('change');
+                select.dispatchEvent(event);
+            }
+
+            // Eventos para recalcular total
+            div.querySelectorAll('.detalle-cantidad, .detalle-precio-unitario, .detalle-producto').forEach(el => {
+                el.addEventListener('change', function() { calcularTotalPedido(); });
+                el.addEventListener('input', function() { calcularTotalPedido(); });
+            });
+            div.querySelector('.btn-eliminar-detalle').addEventListener('click', function() {
+                if (container.children.length > 1) {
+                    div.remove();
+                    calcularTotalPedido();
+                } else {
+                    alert('Debe haber al menos un detalle.');
+                }
+            });
+
+            calcularTotalPedido();
+        }
+
+        function calcularTotalPedido() {
+            let total = 0;
+            document.querySelectorAll('.pedido-detalle-item').forEach(row => {
+                const cant = parseFloat(row.querySelector('.detalle-cantidad').value) || 0;
+                const pu = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
+                const subtotal = cant * pu;
+                row.querySelector('.detalle-subtotal').textContent = subtotal.toFixed(2);
+                total += subtotal;
+            });
+            document.getElementById('pedidoTotalDisplay').textContent = total.toFixed(2);
+            return total;
+        }
+
+        function resetPedidoForm() {
+            document.getElementById('pedidoId').value = '';
+            document.getElementById('pedidoFecha').value = getDateToday();
+            document.getElementById('pedidoCliente').value = '';
+            document.getElementById('pedidoDetalleContainer').innerHTML = '';
+            document.getElementById('pedidoTotalDisplay').textContent = '0.00';
+            document.getElementById('pedidoFormTitle').textContent = 'Nuevo Pedido';
+            document.getElementById('pedidoSubmitBtn').textContent = 'Guardar';
+            document.getElementById('pedidoFormContainer').classList.add('hidden');
+            // Agregar una fila de detalle por defecto
+            agregarFilaDetalle();
+        }
+
+        function editarPedido(id) {
+            // Cargar datos del pedido
+            const pedRows = query("SELECT * FROM pedidos WHERE id = ?", [id]);
+            if (pedRows.length === 0) return;
+            const ped = pedRows[0];
+            document.getElementById('pedidoId').value = ped.id;
+            document.getElementById('pedidoCliente').value = ped.cliente_id || '';
+            document.getElementById('pedidoFecha').value = ped.fecha || getDateToday();
+            document.getElementById('pedidoFormTitle').textContent = 'Editar Pedido';
+            document.getElementById('pedidoSubmitBtn').textContent = 'Actualizar';
+
+            // Cargar detalles
+            const detalles = query("SELECT * FROM pedido_detalles WHERE pedido_id = ?", [id]);
+            const container = document.getElementById('pedidoDetalleContainer');
+            container.innerHTML = '';
+            if (detalles.length === 0) {
+                agregarFilaDetalle();
+            } else {
+                detalles.forEach(d => {
+                    agregarFilaDetalle(d.producto_id, d.cantidad, d.precio_unitario);
+                });
+            }
+            document.getElementById('pedidoFormContainer').classList.remove('hidden');
+            calcularTotalPedido();
+        }
+
+        // ===================== EVENTOS =====================
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            if (login(user, pass)) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainSection').classList.remove('hidden');
+                document.getElementById('userDisplay').textContent = `Bienvenido, ${user}`;
+                // Cargar datos iniciales
+                renderClientes();
+                renderProductos();
+                renderPedidos();
+                cargarSelectClientes();
+                resetPedidoForm();
+            } else {
+                document.getElementById('loginError').textContent = 'Usuario o contraseña incorrectos.';
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            logout();
+        });
+
+        // Clientes: nuevo
+        document.getElementById('btnNuevoCliente').addEventListener('click', function() {
+            resetClienteForm();
+            document.getElementById('clienteFormContainer').classList.remove('hidden');
+        });
+
+        document.getElementById('clienteCancelBtn').addEventListener('click', resetClienteForm);
+
+        document.getElementById('clienteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('clienteId').value;
+            const nombre = document.getElementById('clienteNombre').value.trim();
+            const email = document.getElementById('clienteEmail').value.trim();
+            const telefono = document.getElementById('clienteTelefono').value.trim();
+            const direccion = document.getElementById('clienteDireccion').value.trim();
+            if (!nombre) { alert('El nombre es obligatorio'); return; }
+            if (id) {
+                run("UPDATE clientes SET nombre = ?, email = ?, telefono = ?, direccion = ? WHERE id = ?",
+                    [nombre, email, telefono, direccion, id]);
+            } else {
+                run("INSERT INTO clientes (nombre, email, telefono, direccion) VALUES (?, ?, ?, ?)",
+                    [nombre, email, telefono, direccion]);
+            }
+            resetClienteForm();
+            renderClientes();
+            // Actualizar select de clientes en pedidos
+            cargarSelectClientes();
+        });
+
+        // Productos: nuevo
+        document.getElementById('btnNuevoProducto').addEventListener('click', function() {
+            resetProductoForm();
+            document.getElementById('productoFormContainer').classList.remove('hidden');
+        });
+
+        document.getElementById('productoCancelBtn').addEventListener('click', resetProductoForm);
+
+        document.getElementById('productoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('productoId').value;
+            const nombre = document.getElementById('productoNombre').value.trim();
+            const descripcion = document.getElementById('productoDescripcion').value.trim();
+            const precio = parseFloat(document.getElementById('productoPrecio').value);
+            const stock = parseInt(document.getElementById('productoStock').value) || 0;
+            if (!nombre) { alert('El nombre es obligatorio'); return; }
+            if (isNaN(precio) || precio < 0) { alert('Precio inválido'); return; }
+            if (id) {
+                run("UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?",
+                    [nombre, descripcion, precio, stock, id]);
+            } else {
+                run("INSERT INTO productos (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)",
+                    [nombre, descripcion, precio, stock]);
+            }
+            resetProductoForm();
+            renderProductos();
+        });
+
+        // Pedidos: nuevo
+        document.getElementById('btnNuevoPedido').addEventListener('click', function() {
+            resetPedidoForm();
+            document.getElementById('pedidoFormContainer').classList.remove('hidden');
+            cargarSelectClientes();
+        });
+
+        document.getElementById('pedidoCancelBtn').addEventListener('click', function() {
+            document.getElementById('pedidoFormContainer').classList.add('hidden');
+        });
+
+        document.getElementById('btnAgregarDetalle').addEventListener('click', function() {
+            agregarFilaDetalle();
+        });
+
+        document.getElementById('pedidoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('pedidoId').value;
+            const cliente_id = document.getElementById('pedidoCliente').value;
+            const fecha = document.getElementById('pedidoFecha').value;
+            if (!cliente_id) { alert('Seleccione un cliente'); return; }
+            if (!fecha) { alert('Ingrese una fecha'); return; }
+
+            // Recalcular total
+            const total = calcularTotalPedido();
+
+            // Guardar pedido
+            if (id) {
+                run("UPDATE pedidos SET cliente_id = ?, fecha = ?, total = ? WHERE id = ?",
+                    [cliente_id, fecha, total, id]);
+                // Eliminar detalles antiguos y volver a insertar
+                run("DELETE FROM pedido_detalles WHERE pedido_id = ?", [id]);
+            } else {
+                run("INSERT INTO pedidos (cliente_id, fecha, total) VALUES (?, ?, ?)",
+                    [cliente_id, fecha, total]);
+                // Obtener el id del pedido recién insertado
+                const lastId = query("SELECT last_insert_rowid() as id");
+                const pedidoId = lastId[0].id;
+                // Insertar detalles
+                document.querySelectorAll('.pedido-detalle-item').forEach(row => {
+                    const producto_id = row.querySelector('.detalle-producto').value;
+                    const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
+                    const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
+                    if (producto_id && cantidad > 0) {
+                        run("INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
+                            [pedidoId, producto_id, cantidad, precio_unitario]);
+                    }
+                });
+                // Si es edición, ya actualizamos
+                if (id) {
+                    // Ya se actualizó el pedido y se borraron detalles; insertar nuevos
+                    document.querySelectorAll('.pedido-detalle-item').forEach(row => {
+                        const producto_id = row.querySelector('.detalle-producto').value;
+                        const cantidad = parseInt(row.querySelector('.detalle-cantidad').value) || 0;
+                        const precio_unitario = parseFloat(row.querySelector('.detalle-precio-unitario').value) || 0;
+                        if (producto_id && cantidad > 0) {
+                            run("INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
+                                [id, producto_id, cantidad, precio_unitario]);
+                        }
+                    });
+                }
+            }
+
+            document.getElementById('pedidoFormContainer').classList.add('hidden');
+            renderPedidos();
+            // Actualizar stocks? Podría hacerse, pero lo dejamos simple.
+        });
+
+        // Cargar base de datos al inicio
+        initDatabase();
+
+        // Si ya hay sesión (por si recarga), pero no mantenemos sesión persistente más allá de la página.
+        // Mostrar login siempre.
+        document.getElementById('loginSection').classList.remove('hidden');
+        document.getElementById('mainSection').classList.add('hidden');
+
+        // Ajustar para que al cargar la página, si hay usuario logueado (no implementado), pero no.
+        // También para edición de pedidos, necesitamos que el formulario de pedido esté listo.
+        // Pre-cargar select de clientes.
+        cargarSelectClientes();
+
+        // Inicializar con una fila de detalle si se abre el formulario.
+        // Pero solo se agrega cuando se hace clic en Nuevo.
+
+        console.log('Sistema de Ventas iniciado. Usuario admin/admin');
+    })();
+</script>
+</body>
+</html>

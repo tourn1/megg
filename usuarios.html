@@ -183,7 +183,7 @@
     }
 
     function editarUsuario(usuarios, id) {
-        const u = usuarios.find(item => item.id === id);
+        const u = usuarios.find(item => item.id == id);
         if (!u) return;
         document.getElementById('usuarioId').value = u.id;
         document.getElementById('usuarioNombre').value = u.usuario || '';

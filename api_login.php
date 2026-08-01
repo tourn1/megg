@@ -5,7 +5,7 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
 
-if ($action === 'login' || $method === 'POST') {
+if ($action === 'login') {
     $usuario = $input['usuario'] ?? '';
     $clave = $input['clave'] ?? '';
     if (!$usuario || !$clave) response(['error' => 'Faltan credenciales'], 400);

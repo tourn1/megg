@@ -240,10 +240,15 @@ class MeggRequestHandler(SimpleHTTPRequestHandler):
                 SESSIONS.clear()
                 return self.send_json({'success': True})
 
+            elif action == 'check':
+                if 'user_id' in SESSIONS:
+                    return self.send_json({'authenticated': True, 'usuario': SESSIONS.get('usuario', 'admin')})
+                else:
+                    return self.send_json({'authenticated': False}, 401)
+
             # Check auth for rest of actions
             if 'user_id' not in SESSIONS:
-                SESSIONS['user_id'] = 1
-                SESSIONS['usuario'] = 'admin'
+                return self.send_json({'error': 'No autorizado'}, 401)
 
             if action == 'clientes_select':
                 c.execute("SELECT id, nombre FROM clientes ORDER BY nombre")

@@ -6,9 +6,9 @@ function getEndpointUrl(entity) {
     const baseUrl = isFile ? 'http://127.0.0.1:8000/' : './';
 
     const map = {
-        'login': 'api_login.php',
-        'logout': 'api_login.php',
-        'check': 'api_login.php',
+        'login': 'api_login.php?action=login',
+        'logout': 'api_login.php?action=logout',
+        'check': 'api_login.php?action=check',
         'clientes': 'api_clientes.php',
         'clientes_select': 'api_clientes.php?action=select',
         'productos': 'api_productos.php',
@@ -101,6 +101,13 @@ async function apiRequest(entity, method = 'GET', data = null, queryString = '')
         const text = await response.text();
 
         if (!response.ok) {
+            if (response.status === 401) {
+                if (!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/' && !window.location.pathname.endsWith('/')) {
+                    localStorage.removeItem('usuario_megg');
+                    sessionStorage.removeItem('usuario_megg');
+                    window.location.href = 'index.html';
+                }
+            }
             let errorMsg = `Error ${response.status}`;
             try {
                 const json = JSON.parse(text);
@@ -202,3 +209,21 @@ function renderNavbar(activeTab) {
         }
     }
 }
+
+// Validar sesión al cargar la página
+async function checkSession() {
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
+    if (isLoginPage) return;
+
+    try {
+        const res = await apiRequest('check', 'GET');
+        if (!res || !res.authenticated) {
+            window.location.href = 'index.html';
+        }
+    } catch (err) {
+        // apiRequest redirige automáticamente en caso de 401
+    }
+}
+
+// Ejecutar validación de sesión automáticamente en páginas protegidas
+checkSession();

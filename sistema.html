@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema - El closet de Megg</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f8f5f2;
+            padding-bottom: 30px;
+        }
+
+        .bg-dark-custom {
+            background: #3d2c2c !important;
+        }
+
+        .btn-primary-custom {
+            background: #b58383;
+            border-color: #b58383;
+            color: #fff;
+        }
+
+        .btn-primary-custom:hover {
+            background: #9e6e6e;
+            color: #fff;
+        }
+
+        .card-shadow {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: none;
+            border-radius: 16px;
+        }
+
+        .search-box {
+            background: #fff;
+            border-radius: 50px;
+            padding: 0.3rem 1rem;
+            border: 1px solid #ddd;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            padding: 0.4rem 0;
+        }
+
+        .search-box i {
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="app">
+        <div id="navbarContainer"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <h3><i class="fas fa-cogs"></i> Sistema y Administración</h3>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-md-6">
+                <div class="card-shadow p-4 bg-white rounded-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary">
+                                <i class="fas fa-database fs-2"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">Copia de Seguridad (Dump MySQL)</h5>
+                                <p class="text-muted small mb-0">Descarga la estructura y datos de la base de datos completa en formato SQL.</p>
+                            </div>
+                        </div>
+                        <p class="text-secondary small">
+                            Genera un archivo <code>.sql</code> que contiene todas las tablas (clientes, productos, pedidos, detalles y usuarios) listo para restaurar o migrar.
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <button id="btnExportarDump" class="btn btn-primary-custom w-100 py-2">
+                            <i class="fas fa-download me-2"></i> Exportar Base de Datos (.sql)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card-shadow p-4 bg-white rounded-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info">
+                                <i class="fas fa-info-circle fs-2"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">Información del Sistema</h5>
+                                <p class="text-muted small mb-0">Detalles de la versión y el entorno.</p>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item d-flex justify-content-between bg-transparent">
+                                <span class="text-muted">Aplicación:</span>
+                                <strong>El closet de Megg</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between bg-transparent">
+                                <span class="text-muted">Versión:</span>
+                                <span class="badge bg-secondary">0.1.1</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between bg-transparent">
+                                <span class="text-muted">Motor BD:</span>
+                                <strong>MySQL</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4 text-center text-muted small">
+                        <i class="fas fa-shield-alt text-success me-1"></i> Estado del sistema normal
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        renderNavbar('sistema');
+
+        document.getElementById('btnExportarDump').addEventListener('click', function () {
+            const url = getEndpointUrl('sistema') + '?action=dump';
+            window.location.href = url;
+        });
+    </script>
+</body>
+
+</html>

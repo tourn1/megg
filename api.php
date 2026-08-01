@@ -12,24 +12,35 @@ switch ($action) {
 
     case 'clientes':
     case 'clientes_select':
-        if ($action === 'clientes_select') $_GET['action'] = 'select';
+        if ($action === 'clientes_select')
+            $_GET['action'] = 'select';
         require __DIR__ . '/api_clientes.php';
         break;
 
     case 'productos':
     case 'productos_select':
-        if ($action === 'productos_select') $_GET['action'] = 'select';
+        if ($action === 'productos_select')
+            $_GET['action'] = 'select';
         require __DIR__ . '/api_productos.php';
         break;
 
     case 'pedidos':
     case 'pedido_detalles':
-        if ($action === 'pedido_detalles') $_GET['action'] = 'detalles';
+        if ($action === 'pedido_detalles')
+            $_GET['action'] = 'detalles';
         require __DIR__ . '/api_pedidos.php';
         break;
 
     case 'usuarios':
         require __DIR__ . '/api_usuarios.php';
+        break;
+
+    case 'reportes':
+        require __DIR__ . '/api_reportes.php';
+        break;
+
+    case 'sistema':
+        require __DIR__ . '/api_sistema.php';
         break;
 
     default:

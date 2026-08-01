@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - El closet de Megg</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- SheetJS (XLSX) para exportación nativa a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f8f5f2;
+            padding-bottom: 30px;
+        }
+
+        .bg-dark-custom {
+            background: #3d2c2c !important;
+        }
+
+        .btn-primary-custom {
+            background: #b58383;
+            border-color: #b58383;
+            color: #fff;
+        }
+
+        .btn-primary-custom:hover {
+            background: #9e6e6e;
+            color: #fff;
+        }
+
+        .card-shadow {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: none;
+            border-radius: 16px;
+        }
+
+        .search-box {
+            background: #fff;
+            border-radius: 50px;
+            padding: 0.3rem 1rem;
+            border: 1px solid #ddd;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            padding: 0.4rem 0;
+        }
+
+        .search-box i {
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="app">
+        <div id="navbarContainer"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <h3><i class="fas fa-chart-line"></i> Reportes</h3>
+            <button class="btn btn-success" id="btnExportarExcel">
+                <i class="fas fa-file-excel me-1"></i> Exportar a Excel
+            </button>
+        </div>
+
+        <!-- Filtros superiores sobre los widgets -->
+        <div class="card-shadow p-3 bg-white rounded-4 mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary">Fecha Desde</label>
+                    <input type="date" class="form-control" id="filterFechaDesde">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary">Fecha Hasta</label>
+                    <input type="date" class="form-control" id="filterFechaHasta">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small text-secondary">Búsqueda libre</label>
+                    <input type="text" class="form-control" id="filterTexto" placeholder="Buscar cliente, ID, estado...">
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button class="btn btn-outline-secondary w-100" id="btnLimpiarFiltros" title="Limpiar filtros">
+                        <i class="fas fa-undo me-1"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3 Widgets flotantes en línea -->
+        <div class="row mb-4 g-3">
+            <div class="col-md-4">
+                <div class="card-shadow p-3 bg-white rounded-4 border-start border-4 border-primary d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase text-muted fw-bold small">Cantidad de Ventas</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="widgetCantVentas">0</div>
+                    </div>
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary">
+                        <i class="fas fa-shopping-cart fs-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-shadow p-3 bg-white rounded-4 border-start border-4 border-success d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase text-muted fw-bold small">Dinero Facturado</div>
+                        <div class="fs-2 fw-bold text-success mt-1" id="widgetFacturado">$0.00</div>
+                    </div>
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success">
+                        <i class="fas fa-dollar-sign fs-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-shadow p-3 bg-white rounded-4 border-start border-4 border-info d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase text-muted fw-bold small">Ganancia Est.</div>
+                        <div class="fs-2 fw-bold text-info mt-1" id="widgetGanancia">$0.00</div>
+                    </div>
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info">
+                        <i class="fas fa-chart-pie fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listado de Pedidos y Paginación -->
+        <div id="reportesList">Cargando reporte de pedidos...</div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        renderNavbar('reportes');
+
+        let reportesCache = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        // Cargar datos
+        async function loadReportes() {
+            try {
+                reportesCache = await apiRequest('reportes', 'GET');
+                applyFiltersAndRender();
+            } catch (err) {
+                document.getElementById('reportesList').innerHTML = `
+                    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ${err.message}</div>
+                `;
+            }
+        }
+
+        // Obtener arreglo filtrado por fecha desde, hasta y texto libre
+        function getFilteredData() {
+            const desde = document.getElementById('filterFechaDesde').value;
+            const hasta = document.getElementById('filterFechaHasta').value;
+            const texto = document.getElementById('filterTexto').value.toLowerCase().trim();
+
+            return reportesCache.filter(item => {
+                // Filtro Fecha desde
+                if (desde && item.fecha < desde) return false;
+                // Filtro Fecha hasta
+                if (hasta && item.fecha > hasta) return false;
+
+                // Búsqueda libre en todos los campos de cada registro
+                if (texto) {
+                    const matchId = String(item.id).toLowerCase().includes(texto);
+                    const matchCliente = (item.cliente_nombre || '').toLowerCase().includes(texto);
+                    const matchFecha = (item.fecha || '').toLowerCase().includes(texto);
+                    const matchTotal = String(item.total || '').toLowerCase().includes(texto);
+                    const matchPagado = (item.pagado == 1 ? 'pagado' : 'pendiente').includes(texto);
+                    const matchEntregado = (item.entregado == 1 ? 'entregado' : 'pendiente').includes(texto);
+
+                    if (!matchId && !matchCliente && !matchFecha && !matchTotal && !matchPagado && !matchEntregado) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        // Aplicar filtros, calcular widgets y renderizar listado
+        function applyFiltersAndRender() {
+            const filtered = getFilteredData();
+
+            // Actualizar Widgets
+            const cantVentas = filtered.length;
+            const facturado = filtered.reduce((sum, item) => sum + parseFloat(item.total || 0), 0);
+            const costoTotal = filtered.reduce((sum, item) => sum + parseFloat(item.costo_total || 0), 0);
+            const ganancia = facturado - costoTotal;
+
+            document.getElementById('widgetCantVentas').innerText = cantVentas;
+            document.getElementById('widgetFacturado').innerText = '$' + facturado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('widgetGanancia').innerText = '$' + ganancia.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Renderizar Tabla con Paginación
+            renderTablaReportes(filtered);
+        }
+
+        function renderTablaReportes(data) {
+            const container = document.getElementById('reportesList');
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="card-shadow p-4 bg-white rounded-4 text-center text-muted">
+                        <i class="fas fa-search fs-1 mb-2"></i>
+                        <p class="mb-0">No se encontraron pedidos con los filtros seleccionados.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const totalItems = data.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const paginatedData = data.slice(startIndex, endIndex);
+
+            let rows = paginatedData.map(item => {
+                const totalNum = parseFloat(item.total || 0);
+                const costoNum = parseFloat(item.costo_total || 0);
+                const gananciaNum = totalNum - costoNum;
+
+                const badgePagado = item.pagado == 1
+                    ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Pagado</span>'
+                    : '<span class="badge bg-danger"><i class="fas fa-clock me-1"></i>Pendiente</span>';
+
+                const badgeEntregado = item.entregado == 1
+                    ? '<span class="badge bg-info"><i class="fas fa-truck me-1"></i>Entregado</span>'
+                    : '<span class="badge bg-warning text-dark"><i class="fas fa-box me-1"></i>Pendiente</span>';
+
+                return `
+                    <tr>
+                        <td><strong>#${item.id}</strong></td>
+                        <td>${escapeHtml(item.cliente_nombre || 'Desconocido')}</td>
+                        <td>${item.fecha || ''}</td>
+                        <td class="fw-bold">$${totalNum.toFixed(2)}</td>
+                        <td class="text-info fw-bold">$${gananciaNum.toFixed(2)}</td>
+                        <td>${badgePagado}</td>
+                        <td>${badgeEntregado}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="card-shadow p-3 bg-white rounded-4 mb-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th># ID</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha</th>
+                                    <th>Total Facturado</th>
+                                    <th>Ganancia Est.</th>
+                                    <th>Estado Pago</th>
+                                    <th>Estado Entrega</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+
+                    <!-- Controles de Paginación -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted">Mostrar</span>
+                            <select class="form-select form-select-sm" id="itemsPerPageSelect" style="width: auto;">
+                                <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+                                <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                                <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
+                            </select>
+                            <span class="small text-muted">registros (Mostrando ${startIndex + 1} a ${endIndex} de ${totalItems})</span>
+                        </div>
+
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                    <button class="page-link" onclick="changePage(${currentPage - 1})">Anterior</button>
+                                </li>
+                                ${generatePaginationLinks(totalPages, currentPage)}
+                                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                    <button class="page-link" onclick="changePage(${currentPage + 1})">Siguiente</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('itemsPerPageSelect').addEventListener('change', function () {
+                itemsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTablaReportes(data);
+            });
+        }
+
+        function generatePaginationLinks(totalPages, current) {
+            let links = '';
+            for (let i = 1; i <= totalPages; i++) {
+                links += `
+                    <li class="page-item ${i === current ? 'active' : ''}">
+                        <button class="page-link" onclick="changePage(${i})">${i}</button>
+                    </li>
+                `;
+            }
+            return links;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTablaReportes(getFilteredData());
+        }
+
+        // Exportar datos filtrados a Excel usando SheetJS
+        document.getElementById('btnExportarExcel').addEventListener('click', function () {
+            const filtered = getFilteredData();
+            if (filtered.length === 0) {
+                alert('No hay datos para exportar con los filtros actuales.');
+                return;
+            }
+
+            const dataToExport = filtered.map(item => {
+                const totalNum = parseFloat(item.total || 0);
+                const costoNum = parseFloat(item.costo_total || 0);
+                return {
+                    "N° Pedido": item.id,
+                    "Cliente": item.cliente_nombre || 'Desconocido',
+                    "Fecha": item.fecha || '',
+                    "Total Facturado ($)": totalNum,
+                    "Ganancia Estimada ($)": totalNum - costoNum,
+                    "Estado Pago": item.pagado == 1 ? 'Pagado' : 'Pendiente',
+                    "Estado Entrega": item.entregado == 1 ? 'Entregado' : 'Pendiente'
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte Pedidos");
+
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `reporte_pedidos_megg_${fechaHoy}.xlsx`);
+        });
+
+        // Event listeners para filtros
+        document.getElementById('filterFechaDesde').addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
+        document.getElementById('filterFechaHasta').addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
+        document.getElementById('filterTexto').addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
+
+        document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
+            document.getElementById('filterFechaDesde').value = '';
+            document.getElementById('filterFechaHasta').value = '';
+            document.getElementById('filterTexto').value = '';
+            currentPage = 1;
+            applyFiltersAndRender();
+        });
+
+        loadReportes();
+    </script>
+</body>
+
+</html>

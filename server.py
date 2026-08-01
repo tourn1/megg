@@ -107,6 +107,8 @@ def init_db():
     existing_ped = [row[1] for row in c.execute("PRAGMA table_info(pedidos)").fetchall()]
     if 'foto' not in existing_ped:
         c.execute("ALTER TABLE pedidos ADD COLUMN foto TEXT")
+    if 'entregado' not in existing_ped:
+        c.execute("ALTER TABLE pedidos ADD COLUMN entregado INTEGER DEFAULT 0")
     
     c.execute('''CREATE TABLE IF NOT EXISTS pedido_detalles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

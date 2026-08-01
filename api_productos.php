@@ -53,7 +53,7 @@ if ($method === 'GET') {
     $precio_venta  = floatval($input['precio_venta'] ?? ($input['precio'] ?? 0));
     $stock         = isset($input['stock']) ? intval($input['stock']) : 1;
     $fotoRaw       = $input['foto']          ?? '';
-    if (!$nombre || $precio_venta <= 0) response(['error' => 'Nombre y precio de venta requeridos'], 400);
+    if (!$nombre) response(['error' => 'Nombre requerido'], 400);
 
     $foto = saveFotoFile($fotoRaw, 'productos');
     $stmt = $conn->prepare("INSERT INTO productos (nombre, descripcion, precio_costo, precio_venta, precio, stock, foto) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -67,14 +67,16 @@ if ($method === 'GET') {
 
 // ── PUT ────────────────────────────────────────────────────────────────────────
 } elseif ($method === 'PUT') {
-    $id            = $input['id']            ?? 0;
-    $nombre        = $input['nombre']        ?? '';
-    $descripcion   = $input['descripcion']   ?? '';
+    $id            = intval($input['id'] ?? 0);
+    $nombre        = isset($input['nombre']) ? trim($input['nombre']) : '';
+    $descripcion   = isset($input['descripcion']) ? trim($input['descripcion']) : '';
     $precio_costo  = floatval($input['precio_costo'] ?? 0);
     $precio_venta  = floatval($input['precio_venta'] ?? ($input['precio'] ?? 0));
     $stock         = isset($input['stock']) ? intval($input['stock']) : 1;
     $fotoRaw       = $input['foto']          ?? '';
-    if (!$id || !$nombre || $precio_venta <= 0) response(['error' => 'Datos inválidos'], 400);
+    if ($id <= 0 || $nombre === '') {
+        response(['error' => 'Datos inválidos (se requiere ID válido y nombre)'], 400);
+    }
 
     if (!empty($fotoRaw) && strpos($fotoRaw, 'data:image/') === 0) {
         $stmt = $conn->prepare("SELECT foto FROM productos WHERE id = ?");

@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <style>
         * {
             font-family: 'Poppins', sans-serif;
@@ -81,24 +82,42 @@
         <div class="card login-card">
             <div class="card-header text-white text-center">
                 <img src="logo.jpg" alt="El closet de Megg" class="logo-img">
-                <p class="mb-0 small">Sistemas</p>
+                <p class="mb-0 small">El closet de Megg</p>
             </div>
             <div class="card-body">
                 <form id="loginForm">
                     <div class="mb-3">
                         <label for="username" class="form-label">Usuario</label>
-                        <input type="text" class="form-control" id="username" value="admin" required>
+                        <input type="text" class="form-control" id="username" value="" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="password" value="admin" required>
+                        <input type="password" class="form-control" id="password" value="" required>
+                    </div>
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label small text-muted" for="rememberMe">Recordar cuenta</label>
+                        </div>
+                    </div>
+                    <div class="mb-3 p-2 border rounded bg-light d-flex align-items-center justify-content-between">
+                        <div class="form-check m-0 d-flex align-items-center gap-2">
+                            <input type="checkbox" class="form-check-input mt-0" id="captchaCheck"
+                                style="width: 20px; height: 20px; cursor: pointer;">
+                            <label class="form-check-label small fw-medium" for="captchaCheck"
+                                style="cursor: pointer; user-select: none;">No soy un robot</label>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-robot text-secondary fs-4"></i>
+                            <div style="font-size: 8px;" class="text-muted">reCAPTCHA</div>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-login w-100">Iniciar Sesión</button>
                     <div id="loginError" class="text-danger mt-3 text-center"></div>
                 </form>
             </div>
             <div class="card-footer text-center text-muted small bg-transparent border-0 pb-3">
-                Version 0.1.0
+                Version 0.1.1
             </div>
         </div>
     </div>
@@ -109,13 +128,27 @@
             e.preventDefault();
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
+            const captchaChecked = document.getElementById('captchaCheck').checked;
+            const rememberMe = document.getElementById('rememberMe').checked;
             const errorDiv = document.getElementById('loginError');
+
+            if (!captchaChecked) {
+                errorDiv.textContent = 'Por favor, confirma que no eres un robot.';
+                return;
+            }
+
             errorDiv.textContent = 'Verificando credenciales...';
 
             try {
                 const res = await apiRequest('login', 'POST', { usuario: user, clave: pass });
                 if (res.success) {
-                    if (res.usuario) localStorage.setItem('usuario_megg', res.usuario);
+                    if (res.usuario) {
+                        if (rememberMe) {
+                            localStorage.setItem('usuario_megg', res.usuario);
+                        } else {
+                            sessionStorage.setItem('usuario_megg', res.usuario);
+                        }
+                    }
                     window.location.href = 'pedidos.html';
                 } else {
                     errorDiv.textContent = res.error || 'Credenciales incorrectas.';

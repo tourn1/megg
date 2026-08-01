@@ -1,0 +1,72 @@
+/* Estilos globales para botones optimizados para pantallas táctiles y móviles */
+.btn {
+    min-height: 48px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 10px;
+    touch-action: manipulation;
+}
+
+/* Ajuste específico para botones sm en tablas/listas */
+.btn-sm {
+    min-height: 42px;
+    min-width: 42px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.95rem;
+    border-radius: 8px;
+}
+
+/* Botones editar y eliminar 50% más anchos */
+.btn-edit,
+.btn-del {
+    padding-left: 1.2rem !important;
+    padding-right: 1.2rem !important;
+    min-width: 60px !important;
+}
+
+/* Optimización para menú de navegación mobile */
+.navbar-nav .nav-link {
+    padding: 0.75rem 1rem !important;
+    font-size: 1.05rem;
+    display: block;
+}
+
+.navbar-nav .nav-item {
+    margin-bottom: 0.25rem;
+}
+
+.navbar-toggler {
+    padding: 0.6rem 0.8rem !important;
+    font-size: 1.25rem;
+}
+
+/* Botón principal customizado */
+.btn-primary-custom {
+    background: #b58383;
+    border-color: #b58383;
+    color: #fff;
+    font-weight: 500;
+}
+
+.btn-primary-custom:hover,
+.btn-primary-custom:active,
+.btn-primary-custom:focus {
+    background: #9e6e6e;
+    border-color: #9e6e6e;
+    color: #fff;
+}
+
+/* Botón de input de archivos */
+.file-input-btn {
+    min-height: 44px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}

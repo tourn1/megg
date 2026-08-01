@@ -61,6 +61,7 @@ if ($method === 'GET') {
     $fecha      = $input['fecha']      ?? date('Y-m-d');
     $total      = $input['total']      ?? 0;
     $pagado     = (!empty($input['pagado']) && ($input['pagado'] === true || $input['pagado'] === 1 || $input['pagado'] === '1' || $input['pagado'] === 'true')) ? 1 : 0;
+$entregado   = (!empty($input['entregado']) && ($input['entregado'] === true || $input['entregado'] === 1 || $input['entregado'] === '1' || $input['entregado'] === 'true')) ? 1 : 0;
     $fotoRaw    = $input['foto']       ?? '';
     if (!$cliente_id || $total < 0) response(['error' => 'Datos inválidos'], 400);
 
@@ -68,8 +69,8 @@ if ($method === 'GET') {
 
     $conn->begin_transaction();
     try {
-        $stmt = $conn->prepare("INSERT INTO pedidos (cliente_id, fecha, total, pagado, foto) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param('isdis', $cliente_id, $fecha, $total, $pagado, $foto);
+        $stmt = $conn->prepare("INSERT INTO pedidos (cliente_id, fecha, total, pagado, entregado, foto) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('isdisi', $cliente_id, $fecha, $total, $pagado, $entregado, $foto);
         $stmt->execute();
         $pedido_id = $conn->insert_id;
 
@@ -98,6 +99,7 @@ if ($method === 'GET') {
     $fecha      = $input['fecha']      ?? date('Y-m-d');
     $total      = $input['total']      ?? 0;
     $pagado     = (!empty($input['pagado']) && ($input['pagado'] === true || $input['pagado'] === 1 || $input['pagado'] === '1' || $input['pagado'] === 'true')) ? 1 : 0;
+$entregado   = (!empty($input['entregado']) && ($input['entregado'] === true || $input['entregado'] === 1 || $input['entregado'] === '1' || $input['entregado'] === 'true')) ? 1 : 0;
     $fotoRaw    = $input['foto']       ?? '';
     if (!$id || !$cliente_id) response(['error' => 'ID y cliente requeridos'], 400);
 
@@ -113,8 +115,8 @@ if ($method === 'GET') {
 
     $conn->begin_transaction();
     try {
-        $stmt = $conn->prepare("UPDATE pedidos SET cliente_id = ?, fecha = ?, total = ?, pagado = ?, foto = ? WHERE id = ?");
-        $stmt->bind_param('isdisi', $cliente_id, $fecha, $total, $pagado, $foto, $id);
+        $stmt = $conn->prepare("UPDATE pedidos SET cliente_id = ?, fecha = ?, total = ?, pagado = ?, entregado = ?, foto = ? WHERE id = ?");
+        $stmt->bind_param('isdisii', $cliente_id, $fecha, $total, $pagado, $entregado, $foto, $id);
         $stmt->execute();
 
         $conn->query("DELETE FROM pedido_detalles WHERE pedido_id = $id");

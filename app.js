@@ -15,7 +15,9 @@ function getEndpointUrl(entity) {
         'productos_select': 'api_productos.php?action=select',
         'pedidos': 'api_pedidos.php',
         'pedido_detalles': 'api_pedidos.php?action=detalles',
-        'usuarios': 'api_usuarios.php'
+        'usuarios': 'api_usuarios.php',
+        'reportes': 'api_reportes.php',
+        'sistema': 'api_sistema.php'
     };
 
     const script = map[entity] || 'api.php?action=' + entity;
@@ -166,6 +168,8 @@ function renderNavbar(activeTab) {
                         <li class="nav-item"><a class="nav-link ${activeTab === 'clientes' ? 'active' : ''}" href="clientes.html">Clientes</a></li>
                         <li class="nav-item"><a class="nav-link ${activeTab === 'productos' ? 'active' : ''}" href="productos.html">Productos</a></li>
                         <li class="nav-item"><a class="nav-link ${activeTab === 'usuarios' ? 'active' : ''}" href="usuarios.html">Usuarios</a></li>
+                        <li class="nav-item"><a class="nav-link ${activeTab === 'reportes' ? 'active' : ''}" href="reportes.html">Reportes</a></li>
+                        <li class="nav-item"><a class="nav-link ${activeTab === 'sistema' ? 'active' : ''}" href="sistema.html">Sistema</a></li>
                     </ul>
                     <div class="d-flex align-items-center gap-2">
                         <span class="navbar-text text-white-50 me-2" id="userDisplay">👋 ${escapeHtml(usuarioGuardado)}</span>

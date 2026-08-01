@@ -203,29 +203,40 @@
                 <input type="hidden" id="pedidoId">
                 <input type="hidden" id="pedidoFoto">
                 <div class="row">
+
+
+
                     <div class="col-md-6 mb-2">
-                        <label>Entregado</label>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="pedidoEntregado">
-                            <label class="form-check-label" for="pedidoEntregado">Entregado</label>
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="pedidoPagado">
+                            <label class="form-check-label" for="pedidoPagado"> Pagado</label>
                         </div>
                     </div>
+
+                    <div class="col-md-6 mb-2">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="pedidoEntregado">
+                            <label class="form-check-label" for="pedidoEntregado"> Entregado</label>
+                        </div>
+                    </div>
+
+
+
+                </div>
+                <div class="row">
+
                     <div class="col-md-6 mb-2">
                         <label>Cliente</label>
                         <select class="form-select" id="pedidoCliente" required></select>
                     </div>
-                </div>
-                <div class="row">
+
                     <div class="col-md-6 mb-2">
                         <label>Fecha</label>
                         <input type="date" class="form-control" id="pedidoFecha" required>
                     </div>
-                    <div class="col-md-6 mb-2">
-                        <div class="form-check form-switch mt-4">
-                            <input class="form-check-input" type="checkbox" id="pedidoPagado">
-                            <label class="form-check-label" for="pedidoPagado">Pagado</label>
-                        </div>
-                    </div>
+
+
+
                 </div>
                 <div class="mb-3">
                     <label>Foto del pedido <span class="text-muted small">(opcional, ej: comprobante)</span></label>
@@ -356,8 +367,8 @@
                 paginatedItems.forEach((p, idx) => {
                     const isPagado = (p.pagado == 1 || p.pagado === true || p.pagado === '1' || p.pagado === 'true');
                     const isEntregado = (p.entregado == 1 || p.entregado === true || p.entregado === '1' || p.entregado === 'true');
-                    const badgePagado = isPagado ? '<span class="badge badge-pagado">Pagado</span>' : '<span class="badge badge-impagado">Impagado</span>';
-                    const badgeEntregado = isEntregado ? '<span class="badge badge-pagado">Entregado</span>' : '<span class="badge badge-impagado">Pendiente</span>';
+                    const badgePagado = isPagado ? '<span class="badge badge-pagado">Pagado</span>' : '<span class="badge badge-impagado">Impago</span>';
+                    const badgeEntregado = isEntregado ? '<span class="badge badge-pagado">Entregado</span>' : '<span class="badge badge-impagado">No Entregado</span>';
                     const fotoHtml = p.foto
                         ? `<img class="foto-thumb" data-pedfoto-idx="${idx}" alt="pedido ${p.id}">`
                         : `<div class="foto-placeholder"><i class="fas fa-receipt"></i></div>`;
@@ -578,7 +589,8 @@
                     document.getElementById('pedidoCliente').value = ped.cliente_id || '';
                 }
                 document.getElementById('pedidoFecha').value = ped.fecha || getDateToday();
-                document.getElementById('pedidoEntregado').checked = ped.entregado == 1;
+                document.getElementById('pedidoPagado').checked = (ped.pagado == 1 || ped.pagado === true || ped.pagado === '1' || ped.pagado === 'true');
+                document.getElementById('pedidoEntregado').checked = (ped.entregado == 1 || ped.entregado === true || ped.entregado === '1' || ped.entregado === 'true');
                 document.getElementById('pedidoFoto').value = ped.foto || '';
                 document.getElementById('pedidoFotoFile').value = '';
                 if (ped.foto && !ped.foto.startsWith('data:')) {
@@ -626,6 +638,7 @@
                 document.getElementById('pedidoCliente').value = '';
             }
             document.getElementById('pedidoEntregado').checked = false;
+            document.getElementById('pedidoPagado').checked = false;
             document.getElementById('pedidoDetalleContainer').innerHTML = '';
             document.getElementById('pedidoTotalDisplay').textContent = '0.00';
             document.getElementById('pedidoFormTitle').textContent = 'Nuevo Pedido';

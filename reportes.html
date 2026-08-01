@@ -355,19 +355,29 @@
             XLSX.writeFile(workbook, `reporte_pedidos_megg_${fechaHoy}.xlsx`);
         });
 
+        function setDefaultDates() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+
+            document.getElementById('filterFechaDesde').value = `${year}-${month}-01`;
+            document.getElementById('filterFechaHasta').value = `${year}-${month}-${day}`;
+        }
+
         // Event listeners para filtros
         document.getElementById('filterFechaDesde').addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
         document.getElementById('filterFechaHasta').addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
         document.getElementById('filterTexto').addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
 
         document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
-            document.getElementById('filterFechaDesde').value = '';
-            document.getElementById('filterFechaHasta').value = '';
+            setDefaultDates();
             document.getElementById('filterTexto').value = '';
             currentPage = 1;
             applyFiltersAndRender();
         });
 
+        setDefaultDates();
         loadReportes();
     </script>
 </body>

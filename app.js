@@ -179,12 +179,14 @@ function renderNavbar(activeTab) {
             </div>
         </nav>
 
+        ${(activeTab === 'reportes' || activeTab === 'sistema') ? '' : `
         <div class="mb-3">
             <div class="search-box d-flex align-items-center">
                 <i class="fas fa-search me-2"></i>
                 <input type="text" id="globalSearch" placeholder="Buscar..." class="form-control-sm border-0" style="width: 100%;">
             </div>
         </div>
+        `}
     `;
 
     const headerContainer = document.getElementById('navbarContainer');

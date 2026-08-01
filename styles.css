@@ -70,3 +70,52 @@
     justify-content: center;
     gap: 0.5rem;
 }
+
+/* Estilos de Navbar comunes */
+.brand-logo {
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: #f0e6e0 !important;
+    text-decoration: none;
+}
+
+.brand-logo i {
+    color: #d4a5a5;
+    margin-right: 8px;
+}
+
+.navbar {
+    border-radius: 0 0 20px 20px;
+    padding: 0.8rem 1rem;
+}
+
+.navbar .nav-link {
+    color: #f0e6e0 !important;
+}
+
+.navbar .nav-link.active,
+.navbar .nav-link:hover {
+    color: #d4a5a5 !important;
+}
+
+/* Switches de tamaño doble */
+.form-check.form-switch {
+    min-height: 2.5rem;
+    padding-left: 3.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.form-check.form-switch .form-check-input {
+    width: 3.2em;
+    height: 1.6em;
+    margin-left: -3.5rem;
+    cursor: pointer;
+}
+
+.form-check.form-switch .form-check-label {
+    font-size: 1.1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
